@@ -29,13 +29,11 @@ function sanitizeName(name) {
   return String(name || '')
     .trim()
     .replace(/[^a-zA-Z0-9áéíóúÁÉÍÓÚñÑ_\- ().]/g, '')
-    .slice(0, 120) || 'backup';
+    .slice(0, 120);
 }
 
 function defaultBackupName() {
-  const d = new Date();
-  const pad = (n) => String(n).padStart(2, '0');
-  return `Backup ${pad(d.getDate())}-${pad(d.getMonth() + 1)}-${d.getFullYear()} ${pad(d.getHours())}h${pad(d.getMinutes())}m`;
+  return 'Copia de seguridad';
 }
 
 /** Ensure the path is inside the allowed root (prevent path traversal) */
@@ -108,7 +106,7 @@ async function createBackup(instanceId, serverPath, opts = {}) {
     });
 
     archive.pipe(output);
-    archive.directory(serverPath, false);
+    archive.glob('**/*', { cwd: serverPath, ignore: ['**/session.lock'] });
     archive.finalize();
   });
 
@@ -208,7 +206,7 @@ async function restoreBackup(instanceId, backupId, serverPath) {
   try {
     autoBackup = await createBackup(instanceId, serverPath, {
       name: `[Auto] Pre-restauración ${new Date().toLocaleString('es-ES')}`,
-      description: `Backup automático creado antes de restaurar "${backup.name}"`
+      description: `Copia de seguridad automática creada antes de restaurar "${backup.name}"`
     });
     // Mark the auto-backup
     const backups = await readMeta(instanceId);

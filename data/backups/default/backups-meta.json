@@ -1,0 +1,68 @@
+[
+  {
+    "id": "bk-mokgqms3-kd20",
+    "name": "Copia de seguridad",
+    "instanceId": "default",
+    "description": "",
+    "zipPath": "C:\\Users\\mmyzx\\Documents\\GitHub\\Marcternos\\data\\backups\\default\\bk-mokgqms3-kd20.zip",
+    "size": 163564026,
+    "sizeFormatted": "156.0 MB",
+    "createdAt": "2026-04-29T19:43:51.196Z",
+    "status": "created"
+  },
+  {
+    "id": "bk-mokgokbr-p39i",
+    "name": "backup",
+    "instanceId": "default",
+    "description": "",
+    "zipPath": "C:\\Users\\mmyzx\\Documents\\GitHub\\Marcternos\\data\\backups\\default\\bk-mokgokbr-p39i.zip",
+    "size": 163564026,
+    "sizeFormatted": "156.0 MB",
+    "createdAt": "2026-04-29T19:42:15.461Z",
+    "status": "created"
+  },
+  {
+    "id": "bk-mokgi86r-u6gs",
+    "name": "Auto Pre-restauración 2942026 213713",
+    "instanceId": "default",
+    "description": "Backup automático creado antes de restaurar \"Auto Pre-restauración 2942026 213609\"",
+    "zipPath": "C:\\Users\\mmyzx\\Documents\\GitHub\\Marcternos\\data\\backups\\default\\bk-mokgi86r-u6gs.zip",
+    "size": 159111375,
+    "sizeFormatted": "151.7 MB",
+    "createdAt": "2026-04-29T19:37:20.819Z",
+    "status": "auto-pre-restore"
+  },
+  {
+    "id": "bk-mokggudy-fccg",
+    "name": "Auto Pre-restauración 2942026 213609",
+    "instanceId": "default",
+    "description": "Backup automático creado antes de restaurar \"Antes de petar\"",
+    "zipPath": "C:\\Users\\mmyzx\\Documents\\GitHub\\Marcternos\\data\\backups\\default\\bk-mokggudy-fccg.zip",
+    "size": 162249144,
+    "sizeFormatted": "154.7 MB",
+    "createdAt": "2026-04-29T19:36:16.250Z",
+    "status": "restored"
+  },
+  {
+    "id": "bk-mokgerfw-4ipi",
+    "name": "Antes de petar",
+    "instanceId": "default",
+    "description": "Obviamente con tnt",
+    "zipPath": "C:\\Users\\mmyzx\\Documents\\GitHub\\Marcternos\\data\\backups\\default\\bk-mokgerfw-4ipi.zip",
+    "size": 162145705,
+    "sizeFormatted": "154.6 MB",
+    "createdAt": "2026-04-29T19:35:11.311Z",
+    "status": "restored"
+  },
+  {
+    "id": "bk-mokge8zu-arrr",
+    "name": "backup",
+    "instanceId": "default",
+    "description": "",
+    "zipPath": "C:\\Users\\mmyzx\\Documents\\GitHub\\Marcternos\\data\\backups\\default\\bk-mokge8zu-arrr.zip",
+    "size": 160346994,
+    "sizeFormatted": "152.9 MB",
+    "createdAt": "2026-04-29T19:34:17.841Z",
+    "status": "created"
+  }
+]

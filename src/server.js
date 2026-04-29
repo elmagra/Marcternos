@@ -629,6 +629,7 @@ function addLog(msg) {
         return;
     }
     if (/issued server command:\s*\/list/i.test(msg)) return;
+    if (msg.includes('Saving...') || msg.includes('Saved the game')) return;
 
     const time = new Date().toLocaleTimeString();
     serverState.logs.push(`[${time}] ${msg}`);
@@ -650,9 +651,9 @@ function addLog(msg) {
 
     // --- DETECCIÃ“N DE JUGADORES (Mejorada) ---
     // 1. Detección de Entrada (Joined)
-    const joinMatch = msg.match(/\[.*\/INFO\]: (.*?)(\[.*\])? joined the game/);
-    if (joinMatch) {
-        const name = joinMatch[1].split(' ').pop().trim(); // Limpiar rastro de timestamp si lo hubiera
+    if (msg.includes(' joined the game')) {
+        const parts = msg.split(' joined the game')[0].split(':');
+        const name = parts[parts.length - 1].trim();
         let p = serverState.players.find(x => x.name.toLowerCase() === name.toLowerCase());
         if (p) {
             p.online = true;
@@ -664,8 +665,23 @@ function addLog(msg) {
             };
             serverState.players.push(p);
         }
-        // Refrescar info extendida en paralelo
-        getPlayerExtendedInfo(name).then(info => Object.assign(p, info));
+        // NUEVO: Esperar 2 segundos para que el jugador se estabilice, guardar mundo y actualizar coordenadas
+        setTimeout(async () => {
+            if (mcProcess) {
+                console.log(`[MARCTERNOS] Jugador ${name} estabilizado. Guardando y actualizando coordenadas...`);
+                mcProcess.stdin.write('save-all\n');
+                
+                // Esperar otro segundo a que termine el guardado antes de leer el NBT
+                setTimeout(async () => {
+                    const info = await getPlayerExtendedInfo(name);
+                    Object.assign(p, info);
+                    console.log(`[MARCTERNOS] Coordenadas de ${name} actualizadas tras save-all.`);
+                }, 1000);
+            } else {
+                const info = await getPlayerExtendedInfo(name);
+                Object.assign(p, info);
+            }
+        }, 2000);
     }
 
     // 2. Detección de UUID (Crucial para cambios Premium/No-Premium)
@@ -1169,6 +1185,7 @@ async function getPlayerLocationFromNbt(playerName) {
         const possibleFiles = [uuid + '.dat', undashedUuid + '.dat'];
         const possibleDirs = [
             path.join(serverPath, serverWorldName, 'playerdata'),
+            path.join(serverPath, serverWorldName, 'players', 'data'),
             path.join(serverPath, 'playerdata'),
             path.join(serverPath, 'world', 'playerdata')
         ];
@@ -1365,8 +1382,7 @@ app.post('/api/server/start', async (req, res) => {
             serverState.startTime = null;
             resetPlayersOnlineStatus();
         });
-        // Set start time immediately when spawning as fallback
-        serverState.startTime = Date.now();
+        // Set start time will be done when 'Done' is logged
         res.json({ message: 'OK' });
     } catch (e) { res.status(500).json({ error: e.message }); }
 });
@@ -1427,7 +1443,7 @@ app.post('/api/server/restart', async (req, res) => {
             serverState.startTime = null;
             resetPlayersOnlineStatus();
         });
-        serverState.startTime = Date.now();
+        // Set start time will be done when 'Done' is logged
     }, 1000);
     res.json({ message: 'OK' });
 });
@@ -1949,11 +1965,27 @@ app.post('/api/backups/create', async (req, res) => {
         if (!instance) return res.status(404).json({ error: 'Instancia no encontrada' });
         if (!await fs.pathExists(instance.path)) return res.status(404).json({ error: 'Carpeta del servidor no encontrada' });
 
+        // Si el servidor está encendido, guardamos y desactivamos el auto-guardado temporalmente
+        if (mcProcess) {
+            addLog('ðŸ’¾ Preparando servidor para backup (save-all)...');
+            mcProcess.stdin.write('save-all\n');
+            await new Promise(r => setTimeout(r, 2000));
+            mcProcess.stdin.write('save-off\n');
+            addLog('ðŸ”’ Auto-guardado desactivado temporalmente para el backup.');
+        }
+
         const { name, description } = req.body || {};
         const backup = await createBackup(instance.id, instance.path, { name, description });
+
+        if (mcProcess) {
+            mcProcess.stdin.write('save-on\n');
+            addLog('ðŸ”— Auto-guardado reactivado tras el backup.');
+        }
+
         res.json({ message: 'OK', backup });
     } catch (e) {
         console.error('[BACKUP-CREATE]', e);
+        if (mcProcess) mcProcess.stdin.write('save-on\n').catch(() => {});
         res.status(500).json({ error: e.message });
     }
 });

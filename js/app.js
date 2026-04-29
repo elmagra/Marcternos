@@ -13,6 +13,7 @@ function withInstance(url) {
   return `${url}${sep}instanceId=${encodeURIComponent(id)}`;
 }
 
+// ─── 1. UPTIME & FORMATTING ──────────────────────────────────────────────────
 function formatUptime(ms) {
   if (!ms || ms < 0) return "00:00:00";
   let totalSeconds = Math.floor(ms / 1000);
@@ -72,6 +73,14 @@ async function initDashboard() {
 
 let lastDataState = {};
 let lastLogCount = 0;
+let activePlayersList = [];
+
+// ─── 2. DUPLICATE TIMESTAMP CLEANER ──────────────────────────────────────────
+function cleanDuplicateTimestamps(msg) {
+  // Ej: [21:45:07] [21:45:07] [Server thread/INFO]: ...
+  // Regex busca dos timestamps iguales consecutivos al principio
+  return msg.replace(/^(\[\d{2}:\d{2}:\d{2}\])\s+\1\s+/, '$1 ');
+}
 
 function getDisplayVersion(data) {
   const software = (data.software || '').trim();
@@ -112,11 +121,17 @@ async function updateStatus() {
       }
     }
 
-    const onlineCount = data.players ? data.players.filter((p) => p.online).length : 0;
-    if (onlineCount !== lastDataState.onlineCount) {
-      const maxP = data.maxPlayers || 20;
-      if ($('playerCount')) $('playerCount').textContent = onlineCount + ' / ' + maxP;
-      lastDataState.onlineCount = onlineCount;
+    // Actualizar lista de jugadores activos para el autocompletado (Req #6)
+    if (data.players) {
+      activePlayersList = data.players.filter(p => p.online).map(p => p.name);
+      const onlineCount = activePlayersList.length;
+      if (onlineCount !== lastDataState.onlineCount) {
+        const maxP = data.maxPlayers || 20;
+        if ($('playerCount')) $('playerCount').textContent = onlineCount + ' / ' + maxP;
+        lastDataState.onlineCount = onlineCount;
+      }
+    } else {
+      activePlayersList = [];
     }
 
     if (data.cpu !== lastDataState.cpu) {
@@ -142,8 +157,10 @@ async function updateStatus() {
       lastDataState.displayVersion = displayVersion;
     }
 
-    if (data.status === 'online' || data.status === 'starting') {
+    // Req #1: Contador de tiempo encendido (basado en uptimeMs)
+    if (data.status === 'online') {
       if (!window.localUptimeStart) {
+        // Empieza a contar desde el momento en que status es 'online' si el backend nos da uptimeMs
         window.localUptimeStart = Date.now() - (data.uptimeMs || 0);
       }
       if ($('uptime')) {
@@ -165,7 +182,8 @@ async function updateStatus() {
         newLogs.forEach((msg) => {
           const line = document.createElement('div');
           line.className = 'log-line';
-          line.textContent = msg;
+          // Limpiamos timestamp duplicado (Req #2)
+          line.textContent = cleanDuplicateTimestamps(msg);
           fragment.appendChild(line);
         });
         out.appendChild(fragment);
@@ -180,83 +198,160 @@ async function updateStatus() {
   }
 }
 
-const MC_COMMANDS = {
-  advancement: ['grant <player> everything', 'revoke <player> everything'],
-  attribute: ['<target> <attribute> base set <value>', '<target> <attribute> get'],
-  ban: ['<player> [reason]'],
-  'ban-ip': ['<address|player> [reason]'],
-  banlist: ['ips', 'players'],
-  bossbar: ['add <id> <name>', 'set <id> players <targets>', 'remove <id>'],
-  clear: ['<player> [item] [maxCount]'],
-  clone: ['<begin> <end> <destination> [replace|masked|filtered]'],
-  data: ['get entity <target>', 'merge entity <target> <nbt>'],
-  datapack: ['list', 'enable <name>', 'disable <name>'],
-  debug: ['start', 'stop', 'function <name>'],
-  defaultgamemode: ['survival', 'creative', 'adventure', 'spectator'],
-  deop: ['<player>'],
-  difficulty: ['peaceful', 'easy', 'normal', 'hard'],
-  effect: ['give <player> <effect> [duration] [amplifier]', 'clear <player> [effect]'],
-  enchant: ['<player> <enchantment> [level]'],
-  execute: ['as <target> run <command>', 'at <target> run <command>'],
-  experience: ['add <player> <amount> [points|levels]', 'query <player> <points|levels>'],
-  fill: ['<from> <to> <block> [replace|destroy|keep|hollow|outline]'],
-  forceload: ['add <chunk>', 'remove <chunk>', 'query'],
-  function: ['<name>'],
-  gamemode: ['survival <player>', 'creative <player>', 'adventure <player>', 'spectator <player>'],
-  gamerule: ['<rule> <value>'],
-  give: ['<player> <item> [count]'],
-  help: ['[command]'],
-  item: ['replace entity <targets> <slot> with <item>', 'modify entity <targets> <slot> <modifier>'],
-  jfr: ['start', 'stop'],
-  kick: ['<player> [reason]'],
-  kill: ['<target>'],
-  list: ['uuids'],
-  locate: ['structure <name>', 'biome <name>', 'poi <name>'],
-  loot: ['give <player> loot <table>', 'spawn <pos> loot <table>'],
-  me: ['<action>'],
-  msg: ['<targets> <message>'],
-  op: ['<player>'],
-  pardon: ['<player>'],
-  'pardon-ip': ['<address|player>'],
-  particle: ['<name> <pos> <delta> <speed> <count> [force|normal]'],
-  perf: ['start', 'stop'],
-  place: ['feature <name> <pos>', 'structure <name> <pos>'],
-  playsound: ['<sound> <source> <targets> [pos] [volume] [pitch] [minVolume]'],
-  recipe: ['give <player> <recipe>', 'take <player> <recipe>'],
-  reload: [''],
-  'save-all': ['flush'],
-  'save-off': [''],
-  'save-on': [''],
-  say: ['<message>'],
-  schedule: ['function <name> <time> [append|replace]', 'clear <name>'],
-  scoreboard: ['objectives add <name> <criteria>', 'players set <target> <objective> <score>'],
-  seed: [''],
-  setblock: ['<pos> <block> [destroy|keep|replace]'],
-  setidletimeout: ['<minutes>'],
-  setworldspawn: ['[x y z] [angle]'],
-  spawnpoint: ['[player] [x y z] [angle]'],
-  spectate: ['<target> [player]'],
-  spreadplayers: ['<x> <z> <spreadDistance> <maxRange> <respectTeams> <targets>'],
-  stop: [''],
-  stopsound: ['<targets> [source] [sound]'],
-  summon: ['<entity> [pos] [nbt]'],
-  tag: ['<targets> add <name>', '<targets> remove <name>', '<targets> list'],
-  team: ['add <name> [displayName]', 'join <team> [members]', 'leave [members]'],
-  teammsg: ['<message>'],
-  teleport: ['<targets> <location>', '<targets> <destination>'],
-  tell: ['<targets> <message>'],
-  tellraw: ['<targets> <json>'],
-  tick: ['rate <value>', 'freeze', 'unfreeze', 'step <time>'],
-  time: ['set day', 'set night', 'add <time>', 'query daytime'],
-  title: ['<targets> title <text>', '<targets> subtitle <text>', '<targets> clear'],
-  trigger: ['<objective> [add|set] [value]'],
-  weather: ['clear [duration]', 'rain [duration]', 'thunder [duration]'],
-  whitelist: ['on', 'off', 'list', 'add <player>', 'remove <player>', 'reload'],
-  worldborder: ['set <distance> [time]', 'add <distance> [time]', 'center <x> <z>'],
-  xp: ['add <player> <amount> [points|levels]', 'set <player> <amount> [points|levels]']
+// ─── 4. & 5. AUTOCOMPLETADO AVANZADO Y POR ARGUMENTOS ─────────────────────────
+
+// Efectos genéricos de Minecraft
+const MINECRAFT_EFFECTS = [
+  'minecraft:speed', 'minecraft:slowness', 'minecraft:haste', 'minecraft:mining_fatigue',
+  'minecraft:strength', 'minecraft:instant_health', 'minecraft:instant_damage',
+  'minecraft:jump_boost', 'minecraft:nausea', 'minecraft:regeneration', 'minecraft:resistance',
+  'minecraft:fire_resistance', 'minecraft:water_breathing', 'minecraft:invisibility',
+  'minecraft:blindness', 'minecraft:night_vision', 'minecraft:hunger', 'minecraft:weakness',
+  'minecraft:poison', 'minecraft:wither', 'minecraft:health_boost', 'minecraft:absorption',
+  'minecraft:saturation', 'minecraft:glowing', 'minecraft:levitation', 'minecraft:luck',
+  'minecraft:unluck', 'minecraft:slow_falling', 'minecraft:conduit_power',
+  'minecraft:dolphins_grace', 'minecraft:bad_omen', 'minecraft:hero_of_the_village',
+  'minecraft:darkness'
+];
+
+// Estructura en árbol de los comandos. 
+// $xxx = variable dinámica (jugadores, efectos, etc)
+// [xxx] = argumento opcional o placeholder
+// <xxx> = argumento requerido
+const COMMAND_TREE_GENERIC = {
+  "effect": {
+    "give": {
+      "$player": {
+        "$effect": {
+          "[duration]": {
+            "[amplifier]": {
+              "[hideParticles(true|false)]": {}
+            }
+          }
+        }
+      }
+    },
+    "clear": {
+      "$player": {
+        "[$effect]": {}
+      }
+    }
+  },
+  "gamemode": {
+    "survival": { "[$player]": {} },
+    "creative": { "[$player]": {} },
+    "adventure": { "[$player]": {} },
+    "spectator": { "[$player]": {} }
+  },
+  "give": {
+    "$player": {
+      "$item": {
+        "[count]": {}
+      }
+    }
+  },
+  "teleport": {
+    "$player": {
+      "[$target]": {}
+    }
+  },
+  "tp": {
+    "$player": {
+      "[$target]": {}
+    }
+  },
+  "time": {
+    "set": { "day": {}, "night": {}, "noon": {}, "midnight": {} },
+    "add": { "<time>": {} },
+    "query": { "daytime": {}, "gametime": {}, "day": {} }
+  },
+  "weather": {
+    "clear": { "[duration]": {} },
+    "rain": { "[duration]": {} },
+    "thunder": { "[duration]": {} }
+  },
+  "ban": { "$player": { "[reason]": {} } },
+  "kick": { "$player": { "[reason]": {} } },
+  "op": { "$player": {} },
+  "deop": { "$player": {} },
+  "pardon": { "$player": {} },
+  "whitelist": {
+    "add": { "$player": {} },
+    "remove": { "$player": {} },
+    "on": {}, "off": {}, "list": {}, "reload": {}
+  },
+  "stop": {},
+  "save-all": {},
+  "save-off": {},
+  "save-on": {},
+  "say": { "<message>": {} }
 };
 
-const BASE_COMMANDS = Object.keys(MC_COMMANDS).sort();
+// Diccionario para resolver variables dinámicas
+const DYNAMIC_RESOLVERS = {
+  "$player": () => activePlayersList.length > 0 ? activePlayersList : ["<player>"],
+  "[$player]": () => activePlayersList.length > 0 ? activePlayersList : ["[player]"],
+  "[$target]": () => activePlayersList.length > 0 ? activePlayersList : ["[target]"],
+  "$effect": () => MINECRAFT_EFFECTS,
+  "[$effect]": () => MINECRAFT_EFFECTS,
+  "$item": () => ['minecraft:diamond', 'minecraft:iron_ingot', 'minecraft:gold_ingot', 'minecraft:emerald', 'minecraft:stone', 'minecraft:dirt'], // Simplificado, extensible
+  "[hideParticles(true|false)]": () => ['true', 'false']
+};
+
+/**
+ * Función recursiva para navegar el árbol de comandos según los argumentos escritos.
+ */
+function getCompletionsForInput(inputArgs) {
+  let currentNode = COMMAND_TREE_GENERIC;
+  
+  // Recorremos el input menos el último argumento que es el que estamos escribiendo
+  for (let i = 0; i < inputArgs.length - 1; i++) {
+    const arg = inputArgs[i];
+    
+    // Buscamos coincidencia exacta en los hijos
+    if (currentNode[arg]) {
+      currentNode = currentNode[arg];
+    } else {
+      // Si no es un nodo estático, miramos si hay una variable dinámica que podría estar consumiendo este arg
+      let matchedDynamic = false;
+      for (const key of Object.keys(currentNode)) {
+        if (key.startsWith('$') || key.startsWith('[')) {
+          currentNode = currentNode[key];
+          matchedDynamic = true;
+          break;
+        }
+      }
+      if (!matchedDynamic) return []; // No hay ruta válida
+    }
+  }
+
+  // Ahora 'currentNode' contiene los posibles siguientes pasos
+  const lastArg = (inputArgs[inputArgs.length - 1] || '').toLowerCase();
+  let suggestions = [];
+
+  for (const key of Object.keys(currentNode)) {
+    if (key.startsWith('$') || key.startsWith('[')) {
+      // Es una variable dinámica o placeholder
+      if (DYNAMIC_RESOLVERS[key]) {
+        const resolvedList = DYNAMIC_RESOLVERS[key]();
+        suggestions.push(...resolvedList);
+      } else {
+        suggestions.push(key);
+      }
+    } else {
+      // Es un literal (ej: 'give', 'clear')
+      suggestions.push(key);
+    }
+  }
+
+  // Filtramos por lo que el usuario ha escrito
+  if (lastArg) {
+    suggestions = suggestions.filter(s => s.toLowerCase().startsWith(lastArg));
+  }
+
+  // Eliminamos duplicados por si acaso
+  return [...new Set(suggestions)].slice(0, 30); // Max 30 sugerencias para no petar la UI
+}
 
 function initConsole() {
   const form = $('consoleForm');
@@ -266,10 +361,37 @@ function initConsole() {
 
   let currentFocus = -1;
 
+  // Renderizar las sugerencias en el box
+  const renderSuggestions = (suggestions, argsSoFar) => {
+    suggestionsBox.innerHTML = '';
+    if (suggestions.length === 0) {
+      suggestionsBox.style.display = 'none';
+      return;
+    }
+
+    suggestions.forEach((suggestion) => {
+      const item = document.createElement('div');
+      item.className = 'suggestion-item';
+      
+      // Reconstruir el comando visualmente
+      const prefix = argsSoFar.length > 0 ? '/' + argsSoFar.join(' ') + ' ' : '/';
+      item.innerHTML = `<span>${prefix}</span>${suggestion}`;
+      
+      item.addEventListener('click', () => {
+        // Al hacer click, autocompletamos
+        input.value = prefix + suggestion + ' ';
+        suggestionsBox.style.display = 'none';
+        input.focus();
+      });
+      suggestionsBox.appendChild(item);
+    });
+    
+    suggestionsBox.style.display = 'block';
+    currentFocus = -1;
+  };
+
   input.addEventListener('input', function () {
     const val = this.value;
-    suggestionsBox.innerHTML = '';
-    currentFocus = -1;
 
     if (!val || !val.startsWith('/')) {
       suggestionsBox.style.display = 'none';
@@ -277,76 +399,42 @@ function initConsole() {
     }
 
     const withoutSlash = val.substring(1);
-    const pieces = withoutSlash.split(/\s+/);
-    const hasArgs = withoutSlash.trim().includes(' ');
-    const baseQuery = (pieces[0] || '').toLowerCase();
+    // Split por espacios, manteniendo el último elemento vacío si acaba en espacio
+    const args = withoutSlash.split(' '); 
+    
+    const argsSoFar = args.slice(0, -1);
+    const suggestions = getCompletionsForInput(args);
 
-    if (!hasArgs) {
-      const filtered = BASE_COMMANDS.filter((cmd) => cmd.startsWith(baseQuery));
-      if (filtered.length > 0) {
-        filtered.forEach((cmd) => {
-          const item = document.createElement('div');
-          item.className = 'suggestion-item';
-          item.innerHTML = `<span>/</span>${cmd}`;
-          item.addEventListener('click', () => {
-            input.value = '/' + cmd + ' ';
-            suggestionsBox.style.display = 'none';
-            input.focus();
-          });
-          suggestionsBox.appendChild(item);
-        });
-        suggestionsBox.style.display = 'block';
-      } else {
-        suggestionsBox.style.display = 'none';
-      }
-      return;
-    }
-
-    const baseCommand = baseQuery;
-    if (!MC_COMMANDS[baseCommand]) {
-      suggestionsBox.style.display = 'none';
-      return;
-    }
-
-    const argsQuery = withoutSlash.substring(baseCommand.length).trim().toLowerCase();
-    const subCommands = MC_COMMANDS[baseCommand]
-      .filter((sub) => sub.toLowerCase().startsWith(argsQuery))
-      .slice(0, 20);
-
-    if (subCommands.length === 0) {
-      suggestionsBox.style.display = 'none';
-      return;
-    }
-
-    subCommands.forEach((sub) => {
-      const item = document.createElement('div');
-      item.className = 'suggestion-item';
-      item.innerHTML = `<span>/</span>${baseCommand} ${sub}`.trim();
-      item.addEventListener('click', () => {
-        input.value = ('/' + baseCommand + ' ' + sub).trim() + ' ';
-        suggestionsBox.style.display = 'none';
-        input.focus();
-      });
-      suggestionsBox.appendChild(item);
-    });
-    suggestionsBox.style.display = 'block';
+    renderSuggestions(suggestions, argsSoFar);
   });
 
   input.addEventListener('keydown', function (e) {
     const items = suggestionsBox.getElementsByClassName('suggestion-item');
-    if (e.keyCode === 40) {
-      currentFocus++;
-      addActive(items);
-    } else if (e.keyCode === 38) {
-      currentFocus--;
-      addActive(items);
-    } else if (e.keyCode === 13) {
-      if (currentFocus > -1) {
-        if (items) items[currentFocus].click();
+    if (suggestionsBox.style.display === 'block' && items.length > 0) {
+      if (e.keyCode === 40) { // DOWN
         e.preventDefault();
+        currentFocus++;
+        addActive(items);
+      } else if (e.keyCode === 38) { // UP
+        e.preventDefault();
+        currentFocus--;
+        addActive(items);
+      } else if (e.keyCode === 9) { // TAB
+        e.preventDefault();
+        if (currentFocus > -1 && items[currentFocus]) {
+          items[currentFocus].click();
+        } else if (items.length > 0) {
+          items[0].click(); // Autocompleta la primera opción si no hay ninguna seleccionada
+        }
+      } else if (e.keyCode === 13) { // ENTER
+        if (currentFocus > -1) {
+          e.preventDefault();
+          items[currentFocus].click();
+        }
+        // Si no hay nada seleccionado, dejamos que haga el submit normal
+      } else if (e.keyCode === 27) { // ESC
+        suggestionsBox.style.display = 'none';
       }
-    } else if (e.keyCode === 27) {
-      suggestionsBox.style.display = 'none';
     }
   });
 
@@ -373,7 +461,11 @@ function initConsole() {
     event.preventDefault();
     const command = input.value.trim();
     if (command === '') return;
-    sendCommandToBackend(command);
+    
+    // Si empieza por /, enviamos sin la barra
+    const finalCmd = command.startsWith('/') ? command.substring(1) : command;
+    sendCommandToBackend(finalCmd);
+    
     input.value = '';
     suggestionsBox.style.display = 'none';
   });
@@ -394,7 +486,6 @@ document.addEventListener('DOMContentLoaded', function () {
     fetch(withInstance('/api/server/ip'))
       .then(r => r.json())
       .then(d => {
-        // Solo mostrar la IP, sin puerto ni protocolos
         const rawFullIp = (d.publicAddress || d.ip || '127.0.0.1').replace(/^https?:\/\//, '');
         const rawIp = rawFullIp.split(':')[0];
         ipContainer.innerHTML = `${rawIp} <i class="fa-solid fa-copy" style="font-size: 0.7rem; margin-left: 4px; color: #3b82f6;"></i>`;
@@ -405,6 +496,3 @@ document.addEventListener('DOMContentLoaded', function () {
       });
   }
 });
-
-
-
