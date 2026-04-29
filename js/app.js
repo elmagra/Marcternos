@@ -489,10 +489,25 @@ document.addEventListener('DOMContentLoaded', function () {
         const rawFullIp = (d.publicAddress || d.ip || '127.0.0.1').replace(/^https?:\/\//, '');
         const rawIp = rawFullIp.split(':')[0];
         ipContainer.innerHTML = `${rawIp} <i class="fa-solid fa-copy" style="font-size: 0.7rem; margin-left: 4px; color: #3b82f6;"></i>`;
-        ipContainer.onclick = () => { navigator.clipboard.writeText(rawIp); alert('IP copiada'); };
+        ipContainer.onclick = () => { 
+          navigator.clipboard.writeText(rawIp);
+          ipContainer.style.color = '#22c55e';
+          setTimeout(() => ipContainer.style.color = '#f1f5f9', 500);
+        };
       })
       .catch(() => {
         ipContainer.innerHTML = '127.0.0.1 <i class="fa-solid fa-copy" style="font-size: 0.7rem; margin-left: 4px; color: #3b82f6;"></i>';
       });
+  }
+
+  const portContainer = $('serverPort');
+  if (portContainer) {
+    const port = portContainer.textContent.trim();
+    portContainer.innerHTML = `${port} <i class="fa-solid fa-copy" style="font-size: 0.7rem; margin-left: 4px; color: #3b82f6;"></i>`;
+    portContainer.onclick = () => { 
+      navigator.clipboard.writeText(port); 
+      portContainer.style.color = '#22c55e';
+      setTimeout(() => portContainer.style.color = '#f1f5f9', 500);
+    };
   }
 });

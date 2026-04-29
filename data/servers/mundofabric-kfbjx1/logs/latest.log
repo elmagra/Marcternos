@@ -1,6 +1,6 @@
-[22:47:43] [main/INFO]: Loading Minecraft 26.1.2 with Fabric Loader 0.19.2
-[22:47:43] [main/INFO]: Mappings not present!
-[22:47:44] [main/INFO]: Loading 59 mods:
+[22:59:37] [main/INFO]: Loading Minecraft 26.1.2 with Fabric Loader 0.19.2
+[22:59:37] [main/INFO]: Mappings not present!
+[22:59:37] [main/INFO]: Loading 59 mods:
 	- alternate-current 1.9.0
 	- appleskin 3.0.9+mc26.1
 	- carpet 26.1+v260402
@@ -75,94 +75,94 @@
 	- modernfix 5.27.5-build.2
 	- noisium 2.8.4+mc26.1-pre-2
 	- placeholder-api 3.0.0+26.1
-[22:47:44] [main/INFO]: SpongePowered MIXIN Subsystem Version=0.8.7 Source=file:/C:/Users/mmyzx/Documents/GitHub/Marcternos/data/servers/mundofabric-kfbjx1/libraries/net/fabricmc/sponge-mixin/0.17.2+mixin.0.8.7/sponge-mixin-0.17.2+mixin.0.8.7.jar Service=Knot/Fabric Env=SERVER
-[22:47:45] [main/INFO]: Compatibility level set to JAVA_16
-[22:47:45] [main/INFO]: Compatibility level set to JAVA_21
-[22:47:45] [main/INFO]: Compatibility level set to JAVA_25
-[22:47:45] [main/WARN]: Reference map 'clumps.refmap.json' for clumps.mixins.json could not be read. If this is a development environment you can ignore this message
-[22:47:45] [main/WARN]: Reference map 'entityculling.refmap.mixins.json' for entityculling.mixins.json could not be read. If this is a development environment you can ignore this message
-[22:47:45] [main/INFO]: Loaded configuration file for Lithium: 168 options available, 0 override(s) found.
-[22:47:45] [main/INFO]: Loaded configuration file for ModernFix 5.27.5-build.2: 75 options available, 0 override(s) found
-[22:47:45] [main/INFO]: Applying Nashorn fix
-[22:47:45] [main/WARN]: Reference map 'modernfix.refmap.json' for modernfix-fabric.mixins.json could not be read. If this is a development environment you can ignore this message
-[22:47:45] [main/WARN]: Reference map 'modernfix.refmap.json' for modernfix-common.mixins.json could not be read. If this is a development environment you can ignore this message
-[22:47:49] [main/INFO]: Initializing MixinExtras via com.llamalad7.mixinextras.service.MixinExtrasServiceImpl(version=0.5.4).
-[22:47:54] [main/INFO]: ModernFix reached bootstrap stage (12.12 s after launch)
-[22:47:58] [main/WARN]: Method overwrite conflict for getTemperature in modernfix-common.mixins.json:perf.remove_biome_temperature_cache.BiomeMixin from mod modernfix, previously written by net.caffeinemc.mods.lithium.mixin.world.temperature_cache.BiomeMixin. Skipping method.
-[22:48:06] [main/INFO]: Vanilla bootstrap took 12713 milliseconds
-[22:48:07] [main/INFO]: Loading Noisium.
-[22:48:07] [main/INFO]: Loaded Noisium config from resource
-[22:48:07] [main/INFO]: Noisium config: noiseChunkGenerator=true, generationShapeConfig=true, chunkSection=true, chainedBlockSource=true, useGuiGraphics=true
-[22:48:07] [main/INFO]: Loaded Fabric config from .\config\noisium.json
-[22:48:07] [main/INFO]: Initializing Distant Horizons server, firing DhApiBeforeDhInitEvent event...
-[22:48:07] [main/INFO]: Running library validation...
-[22:48:07] [main/INFO]: Garbage collectors: [G1 Young Generation, G1 Concurrent GC, G1 Old Generation]
-[22:48:07] [main/WARN]: Distant Horizons: G1 Garbage collector detected.
+[22:59:37] [main/INFO]: SpongePowered MIXIN Subsystem Version=0.8.7 Source=file:/C:/Users/mmyzx/Documents/GitHub/Marcternos/data/servers/mundofabric-kfbjx1/libraries/net/fabricmc/sponge-mixin/0.17.2+mixin.0.8.7/sponge-mixin-0.17.2+mixin.0.8.7.jar Service=Knot/Fabric Env=SERVER
+[22:59:38] [main/INFO]: Compatibility level set to JAVA_16
+[22:59:38] [main/INFO]: Compatibility level set to JAVA_21
+[22:59:38] [main/INFO]: Compatibility level set to JAVA_25
+[22:59:38] [main/WARN]: Reference map 'clumps.refmap.json' for clumps.mixins.json could not be read. If this is a development environment you can ignore this message
+[22:59:38] [main/WARN]: Reference map 'entityculling.refmap.mixins.json' for entityculling.mixins.json could not be read. If this is a development environment you can ignore this message
+[22:59:38] [main/INFO]: Loaded configuration file for Lithium: 168 options available, 0 override(s) found.
+[22:59:38] [main/INFO]: Loaded configuration file for ModernFix 5.27.5-build.2: 75 options available, 0 override(s) found
+[22:59:38] [main/INFO]: Applying Nashorn fix
+[22:59:38] [main/WARN]: Reference map 'modernfix.refmap.json' for modernfix-fabric.mixins.json could not be read. If this is a development environment you can ignore this message
+[22:59:38] [main/WARN]: Reference map 'modernfix.refmap.json' for modernfix-common.mixins.json could not be read. If this is a development environment you can ignore this message
+[22:59:40] [main/INFO]: Initializing MixinExtras via com.llamalad7.mixinextras.service.MixinExtrasServiceImpl(version=0.5.4).
+[22:59:44] [main/INFO]: ModernFix reached bootstrap stage (8.602 s after launch)
+[22:59:46] [main/WARN]: Method overwrite conflict for getTemperature in modernfix-common.mixins.json:perf.remove_biome_temperature_cache.BiomeMixin from mod modernfix, previously written by net.caffeinemc.mods.lithium.mixin.world.temperature_cache.BiomeMixin. Skipping method.
+[22:59:54] [main/INFO]: Vanilla bootstrap took 10088 milliseconds
+[22:59:55] [main/INFO]: Loading Noisium.
+[22:59:55] [main/INFO]: Loaded Noisium config from resource
+[22:59:55] [main/INFO]: Noisium config: noiseChunkGenerator=true, generationShapeConfig=true, chunkSection=true, chainedBlockSource=true, useGuiGraphics=true
+[22:59:55] [main/INFO]: Loaded Fabric config from .\config\noisium.json
+[22:59:55] [main/INFO]: Initializing Distant Horizons server, firing DhApiBeforeDhInitEvent event...
+[22:59:55] [main/INFO]: Running library validation...
+[22:59:56] [main/INFO]: Garbage collectors: [G1 Young Generation, G1 Concurrent GC, G1 Old Generation]
+[22:59:56] [main/WARN]: Distant Horizons: G1 Garbage collector detected.
 This can cause FPS stuttering. 
 It's recommended to use a concurrent garbage collector 
 like ZGC (Java 21+) or Shenandoah (Java 8 through 17) 
 for a smoother experience.
-[22:48:08] [main/INFO]: Distant Horizons, Version: 3.0.1-b
-[22:48:08] [main/INFO]: Registering Fabric Server Events
-[22:48:08] [main/INFO]: Skipping mod compatibility accessor for: [starlight]
-[22:48:08] [main/INFO]: Skipping mod compatibility accessor for: [optifine]
-[22:48:08] [main/INFO]: Skipping mod compatibility accessor for: [bclib]
-[22:48:08] [main/INFO]: Skipping mod compatibility accessor for: [c2me]
-[22:48:08] [main/INFO]: Skipping mod compatibility accessor for: [iris]
-[22:48:08] [main/INFO]: Distant Horizons server Initialized, adding event subscribers...
-[22:48:08] [main/INFO]: Environment: Environment[sessionHost=https://sessionserver.mojang.com, servicesHost=https://api.minecraftservices.com, profilesHost=https://api.mojang.com, name=PROD]
-[22:48:13] [main/INFO]: Loaded 1515 recipes
-[22:48:13] [main/INFO]: Loaded 1617 advancements
-[22:48:13] [main/WARN]: Initial datapack load took 4.970 s
-[22:48:14] [main/INFO]: Applied 0 biome modifications to 0 of 65 new biomes in 1.631 ms
-[22:48:14] [Server thread/INFO]: Initialising config for [DistantHorizons]
-[22:48:14] [Server thread/INFO]: [DistantHorizons] Config initialised
-[22:48:14] [Server thread/INFO]: Dimension ignoring disabled, DH will render all dimensions.
-[22:48:14] [Server thread/INFO]: Applying config to loggers
-[22:48:14] [Server thread/INFO]: Running Delayed setup...
-[22:48:14] [Server thread/INFO]: Delayed setup complete, firing DhApiAfterDhInitEvent event...
-[22:48:14] [Server thread/INFO]: Checking for Distant Horizons update
-[22:48:15] [Server thread/INFO]: New version (3.0.2-b - 26.1.2 neo/fabric) of Distant Horizons is available
-[22:48:15] [Server thread/INFO]: Download link: https://cdn.modrinth.com/data/uCdwusMi/versions/eikDE1mo/DistantHorizons-3.0.2-b-26.1.2-fabric-neoforge.jar
-[22:48:15] [Server thread/INFO]: Distant Horizons server Initialized at 
-[22:48:15] [Server thread/INFO]: Started [DhServerWorld] of type [SERVER_ONLY].
-[22:48:15] [Server thread/INFO]: Starting minecraft server version 26.1.2
-[22:48:15] [Server thread/INFO]: Loading properties
-[22:48:15] [Server thread/INFO]: Default game type: SURVIVAL
-[22:48:15] [Server thread/INFO]: Generating keypair
-[22:48:15] [Server thread/INFO]: Starting Minecraft server on *:25565
-[22:48:15] [Server thread/INFO]: Preparing level "mundoFabric"
-[22:48:16] [DH-Full Data Migration Thread[0]/INFO]: No migration necessary.
-[22:48:16] [Server thread/INFO]: Started DhServerLevel for [Wrapped{ServerLevel[mundoFabric]@minecraft:overworld}] at [[LocalSaveStructure@(.\mundoFabric\dimensions\minecraft\overworld\data)]].
-[22:48:16] [DH-Request Module Ticker [minecraft:overworld] Thread[0]/INFO]: Batch Chunk Generator initialized
-[22:48:16] [DH-Request Module Ticker [minecraft:overworld] Thread[0]/INFO]: Creating world gen queue
-[22:48:16] [DH-Request Module Ticker [minecraft:overworld] Thread[0]/INFO]: Created world gen queue
-[22:48:16] [DH-Request Module Ticker [minecraft:overworld] Thread[0]/INFO]: Set world gen queue for level [minecraft:overworld].
-[22:48:16] [DH-Full Data Migration Thread[0]/INFO]: No migration necessary.
-[22:48:16] [Server thread/INFO]: Started DhServerLevel for [Wrapped{ServerLevel[mundoFabric]@minecraft:the_end}] at [[LocalSaveStructure@(.\mundoFabric\dimensions\minecraft\the_end\data;.\mundoFabric\dimensions\minecraft\overworld\data)]].
-[22:48:16] [DH-Request Module Ticker [minecraft:the_end] Thread[0]/INFO]: Batch Chunk Generator initialized
-[22:48:16] [DH-Request Module Ticker [minecraft:the_end] Thread[0]/INFO]: Creating world gen queue
-[22:48:16] [DH-Request Module Ticker [minecraft:the_end] Thread[0]/INFO]: Created world gen queue
-[22:48:16] [DH-Request Module Ticker [minecraft:the_end] Thread[0]/INFO]: Set world gen queue for level [minecraft:the_end].
-[22:48:16] [DH-Full Data Migration Thread[0]/INFO]: No migration necessary.
-[22:48:16] [Server thread/INFO]: Started DhServerLevel for [Wrapped{ServerLevel[mundoFabric]@minecraft:the_nether}] at [[LocalSaveStructure@(.\mundoFabric\dimensions\minecraft\the_end\data;.\mundoFabric\dimensions\minecraft\the_nether\data;.\mundoFabric\dimensions\minecraft\overworld\data)]].
-[22:48:16] [Server thread/INFO]: Loading 0 persistent chunks...
-[22:48:16] [DH-Request Module Ticker [minecraft:the_nether] Thread[0]/INFO]: Batch Chunk Generator initialized
-[22:48:16] [DH-Request Module Ticker [minecraft:the_nether] Thread[0]/INFO]: Creating world gen queue
-[22:48:16] [DH-Request Module Ticker [minecraft:the_nether] Thread[0]/INFO]: Created world gen queue
-[22:48:16] [DH-Request Module Ticker [minecraft:the_nether] Thread[0]/INFO]: Set world gen queue for level [minecraft:the_nether].
-[22:48:16] [Server thread/INFO]: Preparing spawn area: 100%
-[22:48:16] [Server thread/INFO]: Time elapsed: 69 ms
-[22:48:16] [Server thread/INFO]: Done (0.798s)! For help, type "help"
-[22:48:16] [Server thread/INFO]: Saving chunks for level 'ServerLevel[mundoFabric]'/minecraft:overworld
-[22:48:16] [Server thread/INFO]: Saving chunks for level 'ServerLevel[mundoFabric]'/minecraft:the_end
-[22:48:16] [Server thread/INFO]: Saving chunks for level 'ServerLevel[mundoFabric]'/minecraft:the_nether
-[22:48:16] [Server thread/INFO]: ThreadedAnvilChunkStorage (world): All chunks are saved
-[22:48:16] [Server thread/INFO]: ThreadedAnvilChunkStorage (DIM1): All chunks are saved
-[22:48:16] [Server thread/INFO]: ThreadedAnvilChunkStorage (DIM-1): All chunks are saved
-[22:48:16] [Server thread/INFO]: ThreadedAnvilChunkStorage: All dimensions are saved
-[22:48:16] [Server thread/WARN]: Dedicated server took 34.437 seconds to load
-[22:48:16] [Server thread/ERROR]: Couldn't load server icon
+[22:59:56] [main/INFO]: Distant Horizons, Version: 3.0.1-b
+[22:59:56] [main/INFO]: Registering Fabric Server Events
+[22:59:56] [main/INFO]: Skipping mod compatibility accessor for: [starlight]
+[22:59:56] [main/INFO]: Skipping mod compatibility accessor for: [optifine]
+[22:59:56] [main/INFO]: Skipping mod compatibility accessor for: [bclib]
+[22:59:56] [main/INFO]: Skipping mod compatibility accessor for: [c2me]
+[22:59:56] [main/INFO]: Skipping mod compatibility accessor for: [iris]
+[22:59:56] [main/INFO]: Distant Horizons server Initialized, adding event subscribers...
+[22:59:56] [main/INFO]: Environment: Environment[sessionHost=https://sessionserver.mojang.com, servicesHost=https://api.minecraftservices.com, profilesHost=https://api.mojang.com, name=PROD]
+[23:00:02] [main/INFO]: Loaded 1515 recipes
+[23:00:02] [main/INFO]: Loaded 1617 advancements
+[23:00:02] [main/WARN]: Initial datapack load took 5.629 s
+[23:00:02] [main/INFO]: Applied 0 biome modifications to 0 of 65 new biomes in 1.257 ms
+[23:00:02] [Server thread/INFO]: Initialising config for [DistantHorizons]
+[23:00:03] [Server thread/INFO]: [DistantHorizons] Config initialised
+[23:00:03] [Server thread/INFO]: Dimension ignoring disabled, DH will render all dimensions.
+[23:00:03] [Server thread/INFO]: Applying config to loggers
+[23:00:03] [Server thread/INFO]: Running Delayed setup...
+[23:00:03] [Server thread/INFO]: Delayed setup complete, firing DhApiAfterDhInitEvent event...
+[23:00:03] [Server thread/INFO]: Checking for Distant Horizons update
+[23:00:03] [Server thread/INFO]: New version (3.0.2-b - 26.1.2 neo/fabric) of Distant Horizons is available
+[23:00:03] [Server thread/INFO]: Download link: https://cdn.modrinth.com/data/uCdwusMi/versions/eikDE1mo/DistantHorizons-3.0.2-b-26.1.2-fabric-neoforge.jar
+[23:00:03] [Server thread/INFO]: Distant Horizons server Initialized at 
+[23:00:03] [Server thread/INFO]: Started [DhServerWorld] of type [SERVER_ONLY].
+[23:00:03] [Server thread/INFO]: Starting minecraft server version 26.1.2
+[23:00:03] [Server thread/INFO]: Loading properties
+[23:00:03] [Server thread/INFO]: Default game type: SURVIVAL
+[23:00:03] [Server thread/INFO]: Generating keypair
+[23:00:03] [Server thread/INFO]: Starting Minecraft server on *:25565
+[23:00:03] [Server thread/INFO]: Preparing level "mundoFabric"
+[23:00:04] [DH-Full Data Migration Thread[0]/INFO]: No migration necessary.
+[23:00:04] [Server thread/INFO]: Started DhServerLevel for [Wrapped{ServerLevel[mundoFabric]@minecraft:overworld}] at [[LocalSaveStructure@(.\mundoFabric\dimensions\minecraft\overworld\data)]].
+[23:00:04] [DH-Request Module Ticker [minecraft:overworld] Thread[0]/INFO]: Batch Chunk Generator initialized
+[23:00:04] [DH-Request Module Ticker [minecraft:overworld] Thread[0]/INFO]: Creating world gen queue
+[23:00:04] [DH-Request Module Ticker [minecraft:overworld] Thread[0]/INFO]: Created world gen queue
+[23:00:04] [DH-Request Module Ticker [minecraft:overworld] Thread[0]/INFO]: Set world gen queue for level [minecraft:overworld].
+[23:00:04] [DH-Full Data Migration Thread[0]/INFO]: No migration necessary.
+[23:00:04] [Server thread/INFO]: Started DhServerLevel for [Wrapped{ServerLevel[mundoFabric]@minecraft:the_end}] at [[LocalSaveStructure@(.\mundoFabric\dimensions\minecraft\the_end\data;.\mundoFabric\dimensions\minecraft\overworld\data)]].
+[23:00:04] [DH-Request Module Ticker [minecraft:the_end] Thread[0]/INFO]: Batch Chunk Generator initialized
+[23:00:04] [DH-Request Module Ticker [minecraft:the_end] Thread[0]/INFO]: Creating world gen queue
+[23:00:04] [DH-Request Module Ticker [minecraft:the_end] Thread[0]/INFO]: Created world gen queue
+[23:00:04] [DH-Request Module Ticker [minecraft:the_end] Thread[0]/INFO]: Set world gen queue for level [minecraft:the_end].
+[23:00:04] [DH-Full Data Migration Thread[0]/INFO]: No migration necessary.
+[23:00:04] [Server thread/INFO]: Started DhServerLevel for [Wrapped{ServerLevel[mundoFabric]@minecraft:the_nether}] at [[LocalSaveStructure@(.\mundoFabric\dimensions\minecraft\the_end\data;.\mundoFabric\dimensions\minecraft\the_nether\data;.\mundoFabric\dimensions\minecraft\overworld\data)]].
+[23:00:04] [Server thread/INFO]: Loading 0 persistent chunks...
+[23:00:04] [DH-Request Module Ticker [minecraft:the_nether] Thread[0]/INFO]: Batch Chunk Generator initialized
+[23:00:04] [DH-Request Module Ticker [minecraft:the_nether] Thread[0]/INFO]: Creating world gen queue
+[23:00:04] [DH-Request Module Ticker [minecraft:the_nether] Thread[0]/INFO]: Created world gen queue
+[23:00:04] [DH-Request Module Ticker [minecraft:the_nether] Thread[0]/INFO]: Set world gen queue for level [minecraft:the_nether].
+[23:00:04] [Server thread/INFO]: Preparing spawn area: 100%
+[23:00:04] [Server thread/INFO]: Time elapsed: 47 ms
+[23:00:04] [Server thread/INFO]: Done (0.631s)! For help, type "help"
+[23:00:04] [Server thread/INFO]: Saving chunks for level 'ServerLevel[mundoFabric]'/minecraft:overworld
+[23:00:04] [Server thread/INFO]: Saving chunks for level 'ServerLevel[mundoFabric]'/minecraft:the_end
+[23:00:04] [Server thread/INFO]: Saving chunks for level 'ServerLevel[mundoFabric]'/minecraft:the_nether
+[23:00:04] [Server thread/INFO]: ThreadedAnvilChunkStorage (world): All chunks are saved
+[23:00:04] [Server thread/INFO]: ThreadedAnvilChunkStorage (DIM1): All chunks are saved
+[23:00:04] [Server thread/INFO]: ThreadedAnvilChunkStorage (DIM-1): All chunks are saved
+[23:00:04] [Server thread/INFO]: ThreadedAnvilChunkStorage: All dimensions are saved
+[23:00:04] [Server thread/WARN]: Dedicated server took 28.887 seconds to load
+[23:00:04] [Server thread/ERROR]: Couldn't load server icon
 java.lang.IllegalArgumentException: Invalid world icon size [195, 200], but expected [64, 64]
 	at knot//net.minecraft.server.MinecraftServer.lambda$loadStatusIcon$3(MinecraftServer.java:946)
 	at java.base/java.util.Optional.flatMap(Optional.java:289)
@@ -170,70 +170,51 @@ java.lang.IllegalArgumentException: Invalid world icon size [195, 200], but expe
 	at knot//net.minecraft.server.MinecraftServer.runServer(MinecraftServer.java:745)
 	at knot//net.minecraft.server.MinecraftServer.lambda$spin$0(MinecraftServer.java:321)
 	at java.base/java.lang.Thread.run(Thread.java:1474)
-[22:48:16] [Server thread/INFO]: Start loading plugin from Jade: snownee.jade.addon.core.CorePlugin
-[22:48:16] [Server thread/INFO]: Start loading plugin from Jade: snownee.jade.addon.vanilla.VanillaPlugin
-[22:48:16] [Server thread/INFO]: Start loading plugin from Jade: snownee.jade.addon.universal.UniversalPlugin
-[22:48:16] [Server thread/INFO]: Start loading plugin from Jade: snownee.jade.addon.access.AccessibilityPlugin
-[22:48:16] [Server thread/INFO]: Start loading plugin from Jade: snownee.jade.addon.debug.DebugPlugin
-[22:48:16] [Server thread/INFO]: There are 0 of a max of 20 players online: 
-[22:48:22] [Server thread/INFO]: There are 0 of a max of 20 players online: 
-[22:48:29] [Server thread/INFO]: There are 0 of a max of 20 players online: 
-[22:48:36] [Server thread/INFO]: There are 0 of a max of 20 players online: 
-[22:48:43] [Server thread/INFO]: There are 0 of a max of 20 players online: 
-[22:48:46] [Server thread/INFO]: Set minecraft:overworld to time marker minecraft:day
-[22:48:50] [Server thread/INFO]: There are 0 of a max of 20 players online: 
-[22:48:57] [Server thread/INFO]: There are 0 of a max of 20 players online: 
-[22:49:04] [Server thread/INFO]: There are 0 of a max of 20 players online: 
-[22:49:11] [Server thread/INFO]: There are 0 of a max of 20 players online: 
-[22:49:18] [Server thread/INFO]: There are 0 of a max of 20 players online: 
-[22:49:25] [Server thread/INFO]: There are 0 of a max of 20 players online: 
-[22:49:32] [Server thread/INFO]: There are 0 of a max of 20 players online: 
-[22:49:39] [Server thread/INFO]: There are 0 of a max of 20 players online: 
-[22:49:46] [Server thread/INFO]: There are 0 of a max of 20 players online: 
-[22:49:53] [Server thread/INFO]: There are 0 of a max of 20 players online: 
-[22:50:00] [Server thread/INFO]: There are 0 of a max of 20 players online: 
-[22:50:07] [Server thread/INFO]: There are 0 of a max of 20 players online: 
-[22:50:14] [Server thread/INFO]: There are 0 of a max of 20 players online: 
-[22:50:21] [Server thread/INFO]: There are 0 of a max of 20 players online: 
-[22:50:26] [Server thread/INFO]: Stopping the server
-[22:50:26] [Server thread/INFO]: Stopping server
-[22:50:26] [Server thread/INFO]: Saving players
-[22:50:26] [Server thread/INFO]: Saving worlds
-[22:50:26] [Server thread/INFO]: Saving chunks for level 'ServerLevel[mundoFabric]'/minecraft:overworld
-[22:50:26] [Server thread/INFO]: Saving chunks for level 'ServerLevel[mundoFabric]'/minecraft:the_end
-[22:50:26] [Server thread/INFO]: Saving chunks for level 'ServerLevel[mundoFabric]'/minecraft:the_nether
-[22:50:26] [Server thread/INFO]: ThreadedAnvilChunkStorage (world): All chunks are saved
-[22:50:26] [Server thread/INFO]: ThreadedAnvilChunkStorage (DIM1): All chunks are saved
-[22:50:26] [Server thread/INFO]: ThreadedAnvilChunkStorage (DIM-1): All chunks are saved
-[22:50:26] [Server thread/INFO]: ThreadedAnvilChunkStorage: All dimensions are saved
-[22:50:26] [Server thread/INFO]: Closing world gen queue
-[22:50:26] [Server thread/INFO]: Closing WorldGenerationQueue...
-[22:50:26] [Server thread/INFO]: Shutting down world generator thread pool...
-[22:50:26] [Server thread/INFO]: World generator thread pool shutdown with [0] incomplete tasks.
-[22:50:26] [Server thread/INFO]: [BatchGenerator] shutting down...
-[22:50:26] [Server thread/INFO]: Closing [BatchGenerationEnvironment]
-[22:50:26] [Server thread/INFO]: Finished closing WorldGenerationQueue
-[22:50:26] [Server thread/INFO]: Closed DHLevel for [Wrapped{ServerLevel[mundoFabric]@minecraft:overworld}].
-[22:50:26] [Server thread/INFO]: Closing world gen queue
-[22:50:26] [Server thread/INFO]: Closing WorldGenerationQueue...
-[22:50:26] [Server thread/INFO]: Shutting down world generator thread pool...
-[22:50:26] [Server thread/INFO]: World generator thread pool shutdown with [0] incomplete tasks.
-[22:50:26] [Server thread/INFO]: [BatchGenerator] shutting down...
-[22:50:26] [Server thread/INFO]: Closing [BatchGenerationEnvironment]
-[22:50:26] [Server thread/INFO]: Finished closing WorldGenerationQueue
-[22:50:26] [Server thread/INFO]: Closed DHLevel for [Wrapped{ServerLevel[mundoFabric]@minecraft:the_end}].
-[22:50:26] [Server thread/INFO]: Closing world gen queue
-[22:50:26] [Server thread/INFO]: Closing WorldGenerationQueue...
-[22:50:26] [Server thread/INFO]: Shutting down world generator thread pool...
-[22:50:26] [Server thread/INFO]: World generator thread pool shutdown with [0] incomplete tasks.
-[22:50:26] [Server thread/INFO]: [BatchGenerator] shutting down...
-[22:50:26] [Server thread/INFO]: Closing [BatchGenerationEnvironment]
-[22:50:26] [Server thread/INFO]: Finished closing WorldGenerationQueue
-[22:50:26] [Server thread/INFO]: Closed DHLevel for [Wrapped{ServerLevel[mundoFabric]@minecraft:the_nether}].
-[22:50:27] [Server thread/INFO]: Closed DhWorld of type [SERVER_ONLY].
-[22:50:27] [Server thread/INFO]: Closed DhWorld of type [SERVER_ONLY].
-[22:50:27] [Server thread/INFO]: Shutting down PriorityTaskPicker thread pool...
-[22:50:27] [Server thread/INFO]: Closing all [3] database connections...
-[22:50:27] [Server thread/INFO]: Closing database connection: [jdbc:dh_sqlite:.\mundoFabric\dimensions\minecraft\the_end\data\DistantHorizons.sqlite]
-[22:50:27] [Server thread/INFO]: Closing database connection: [jdbc:dh_sqlite:.\mundoFabric\dimensions\minecraft\the_nether\data\DistantHorizons.sqlite]
-[22:50:27] [Server thread/INFO]: Closing database connection: [jdbc:dh_sqlite:.\mundoFabric\dimensions\minecraft\overworld\data\DistantHorizons.sqlite]
+[23:00:04] [Server thread/INFO]: Start loading plugin from Jade: snownee.jade.addon.core.CorePlugin
+[23:00:04] [Server thread/INFO]: Start loading plugin from Jade: snownee.jade.addon.vanilla.VanillaPlugin
+[23:00:04] [Server thread/INFO]: Start loading plugin from Jade: snownee.jade.addon.universal.UniversalPlugin
+[23:00:04] [Server thread/INFO]: Start loading plugin from Jade: snownee.jade.addon.access.AccessibilityPlugin
+[23:00:04] [Server thread/INFO]: Start loading plugin from Jade: snownee.jade.addon.debug.DebugPlugin
+[23:00:04] [Server thread/INFO]: There are 0 of a max of 20 players online: 
+[23:00:09] [Server thread/INFO]: Stopping the server
+[23:00:09] [Server thread/INFO]: Stopping server
+[23:00:09] [Server thread/INFO]: Saving players
+[23:00:09] [Server thread/INFO]: Saving worlds
+[23:00:09] [Server thread/INFO]: Saving chunks for level 'ServerLevel[mundoFabric]'/minecraft:overworld
+[23:00:09] [Server thread/INFO]: Saving chunks for level 'ServerLevel[mundoFabric]'/minecraft:the_end
+[23:00:09] [Server thread/INFO]: Saving chunks for level 'ServerLevel[mundoFabric]'/minecraft:the_nether
+[23:00:09] [Server thread/INFO]: ThreadedAnvilChunkStorage (world): All chunks are saved
+[23:00:09] [Server thread/INFO]: ThreadedAnvilChunkStorage (DIM1): All chunks are saved
+[23:00:09] [Server thread/INFO]: ThreadedAnvilChunkStorage (DIM-1): All chunks are saved
+[23:00:09] [Server thread/INFO]: ThreadedAnvilChunkStorage: All dimensions are saved
+[23:00:09] [Server thread/INFO]: Closing world gen queue
+[23:00:09] [Server thread/INFO]: Closing WorldGenerationQueue...
+[23:00:09] [Server thread/INFO]: Shutting down world generator thread pool...
+[23:00:09] [Server thread/INFO]: World generator thread pool shutdown with [0] incomplete tasks.
+[23:00:09] [Server thread/INFO]: [BatchGenerator] shutting down...
+[23:00:09] [Server thread/INFO]: Closing [BatchGenerationEnvironment]
+[23:00:09] [Server thread/INFO]: Finished closing WorldGenerationQueue
+[23:00:09] [Server thread/INFO]: Closed DHLevel for [Wrapped{ServerLevel[mundoFabric]@minecraft:overworld}].
+[23:00:09] [Server thread/INFO]: Closing world gen queue
+[23:00:09] [Server thread/INFO]: Closing WorldGenerationQueue...
+[23:00:09] [Server thread/INFO]: Shutting down world generator thread pool...
+[23:00:09] [Server thread/INFO]: World generator thread pool shutdown with [0] incomplete tasks.
+[23:00:09] [Server thread/INFO]: [BatchGenerator] shutting down...
+[23:00:09] [Server thread/INFO]: Closing [BatchGenerationEnvironment]
+[23:00:09] [Server thread/INFO]: Finished closing WorldGenerationQueue
+[23:00:09] [Server thread/INFO]: Closed DHLevel for [Wrapped{ServerLevel[mundoFabric]@minecraft:the_end}].
+[23:00:09] [Server thread/INFO]: Closing world gen queue
+[23:00:09] [Server thread/INFO]: Closing WorldGenerationQueue...
+[23:00:09] [Server thread/INFO]: Shutting down world generator thread pool...
+[23:00:09] [Server thread/INFO]: World generator thread pool shutdown with [0] incomplete tasks.
+[23:00:09] [Server thread/INFO]: [BatchGenerator] shutting down...
+[23:00:09] [Server thread/INFO]: Closing [BatchGenerationEnvironment]
+[23:00:09] [Server thread/INFO]: Finished closing WorldGenerationQueue
+[23:00:09] [Server thread/INFO]: Closed DHLevel for [Wrapped{ServerLevel[mundoFabric]@minecraft:the_nether}].
+[23:00:09] [Server thread/INFO]: Closed DhWorld of type [SERVER_ONLY].
+[23:00:09] [Server thread/INFO]: Closed DhWorld of type [SERVER_ONLY].
+[23:00:09] [Server thread/INFO]: Shutting down PriorityTaskPicker thread pool...
+[23:00:09] [Server thread/INFO]: Closing all [3] database connections...
+[23:00:09] [Server thread/INFO]: Closing database connection: [jdbc:dh_sqlite:.\mundoFabric\dimensions\minecraft\the_end\data\DistantHorizons.sqlite]
+[23:00:09] [Server thread/INFO]: Closing database connection: [jdbc:dh_sqlite:.\mundoFabric\dimensions\minecraft\overworld\data\DistantHorizons.sqlite]
+[23:00:09] [Server thread/INFO]: Closing database connection: [jdbc:dh_sqlite:.\mundoFabric\dimensions\minecraft\the_nether\data\DistantHorizons.sqlite]
