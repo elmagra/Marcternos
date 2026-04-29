@@ -1,0 +1,542 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>MC Host - Propiedades</title>
+  <link rel="icon" type="image/png" href="resources/icono.png">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" />
+  <link rel="stylesheet" href="css/base.css" />
+  <link rel="stylesheet" href="css/layout.css" />
+  <link rel="stylesheet" href="css/components.css" />
+  <link rel="stylesheet" href="css/players.css" />
+  <link rel="stylesheet" href="css/player-detail.css" />
+  <link rel="stylesheet" href="css/modals.css" />
+  <link rel="stylesheet" href="css/responsive.css" />
+  <link rel="stylesheet" href="css/properties.css" />
+  <style>
+    .save-floating {
+      position: fixed;
+      bottom: 30px;
+      right: 30px;
+      z-index: 1000;
+    }
+
+    .glowing-btn {
+      background: linear-gradient(135deg, #f59e0b, #d97706);
+      border: 1px solid #fbbf24;
+      color: white;
+      font-weight: bold;
+      padding: 16px 32px;
+      font-size: 16px;
+      border-radius: 16px;
+      box-shadow: 0 10px 30px rgba(245, 158, 11, 0.4);
+      transition: all 0.3s ease;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+    .glowing-btn:hover {
+      transform: translateY(-4px);
+      box-shadow: 0 15px 40px rgba(245, 158, 11, 0.6);
+      border-color: #fde68a;
+    }
+    .glowing-btn:disabled {
+      opacity: 0.7;
+      cursor: not-allowed;
+    }
+
+    /* toast */
+    #grToast {
+      position: fixed;
+      bottom: 28px;
+      left: 50%;
+      transform: translateX(-50%) translateY(20px);
+      background: #1e3058;
+      border: 1px solid #3b82f6;
+      color: #e2e8f0;
+      padding: 12px 22px;
+      border-radius: 12px;
+      font-size: 13px;
+      font-weight: 600;
+      box-shadow: 0 8px 30px rgba(0,0,0,.5);
+      opacity: 0;
+      transition: opacity .3s, transform .3s;
+      z-index: 9999;
+      pointer-events: none;
+    }
+    #grToast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+    #grToast.toast-ok  { background: #14532d; border-color: #22c55e; color: #bbf7d0; }
+    #grToast.toast-err { background: #450a0a; border-color: #ef4444; color: #fecaca; }
+
+    .motd-icon-row {
+      display: flex;
+      flex-direction: column;
+      align-items: stretch;
+      gap: 10px;
+    }
+    .icon-uploader-card {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      width: 100%;
+      padding: 8px 10px;
+      border: 1px solid #334155;
+      border-radius: 12px;
+      background: linear-gradient(135deg, rgba(15,23,42,.95), rgba(30,41,59,.7));
+      box-shadow: inset 0 1px 0 rgba(255,255,255,.06);
+    }
+    .icon-preview-wrap {
+      width: 56px;
+      height: 56px;
+      border-radius: 12px;
+      border: 1px solid #475569;
+      background: #0b1220;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+      overflow: hidden;
+    }
+    .icon-preview {
+      width: 100%;
+      height: 100%;
+      object-fit: contain;
+      image-rendering: auto;
+    }
+    .icon-upload-btn {
+      background: linear-gradient(135deg, #3b82f6, #2563eb);
+      border: 1px solid #60a5fa;
+      color: #ffffff;
+      border-radius: 10px;
+      padding: 8px 10px;
+      cursor: pointer;
+      font-weight: 700;
+      font-size: 12px;
+      white-space: nowrap;
+      letter-spacing: .02em;
+    }
+    .icon-upload-btn:hover {
+      filter: brightness(1.08);
+    }
+    .icon-meta {
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+    }
+    .icon-meta small {
+      color: #94a3b8;
+      font-size: 11px;
+      line-height: 1.2;
+    }
+  </style>
+</head>
+<body>
+  <div class="layout">
+    <aside class="sidebar">
+      <img src="resources/marcternos_logo.png" alt="MARCTERNOS" class="sidebar-logo-img">
+      <a class="back-to-instances" href="instances.html"><i class="fa-solid fa-arrow-left"></i> Volver a instancias</a>
+      <nav>
+        <a class="nav-link" href="index.html"><i class="fa-solid fa-gauge-high"></i> Dashboard</a>
+        <a class="nav-link" href="players.html"><i class="fa-solid fa-users"></i> Jugadores</a>
+        <a class="nav-link" href="files.html"><i class="fa-solid fa-folder-open"></i> Archivos</a>
+        <a class="nav-link" href="backups.html"><i class="fa-solid fa-box-archive"></i> Backups</a>
+        <a class="nav-link active" href="properties.html"><i class="fa-solid fa-sliders"></i> Propiedades</a>
+        <a class="nav-link" href="gamerules.html"><i class="fa-solid fa-scroll"></i> Gamerules</a>
+        <a class="nav-link" href="addons.html"><i class="fa-solid fa-puzzle-piece"></i> Plugins &amp; Mods</a>
+      </nav>
+    </aside>
+
+    <main class="main-content">
+      <header class="topbar">
+        <div>
+          <h2>Propiedades del servidor</h2>
+          <p class="small-text">Configuración general</p>
+        </div>
+        <div class="topbar-controls" style="background: rgba(15, 23, 42, 0.4); border: 1px solid rgba(255,255,255,0.05); padding: 10px 20px; border-radius: 20px;">
+          <div class="topbar-status">
+            <div class="status-dot dot-offline" id="globalStatusDot" style="width: 12px; height: 12px;"></div>
+            <span class="topbar-status-text" id="globalStatusText" style="text-transform: uppercase; letter-spacing: 0.05em; font-size: 0.75rem; font-weight: 800;">Apagado</span>
+          </div>
+          <div class="topbar-actions" style="margin-left: 10px;">
+            <button class="btn success" id="globalStartBtn" style="padding: 10px 18px; border-radius: 14px; box-shadow: 0 4px 15px -5px rgba(34, 197, 94, 0.4);"><i class="fa-solid fa-play"></i> INICIAR</button>
+            <button class="btn secondary" id="globalRestartBtn" style="padding: 10px 18px; border-radius: 14px;"><i class="fa-solid fa-rotate"></i></button>
+            <button class="btn danger" id="globalStopBtn" style="padding: 10px 18px; border-radius: 14px; box-shadow: 0 4px 15px -5px rgba(239, 68, 68, 0.4);"><i class="fa-solid fa-stop"></i></button>
+          </div>
+        </div>
+      </header>
+
+      <div class="settings-sections">
+        <!-- Jugador -->
+        <section class="settings-card">
+          <div class="settings-card-header">
+            <span class="settings-card-icon">👥</span>
+            <h3>Jugador</h3>
+          </div>
+          <div class="settings-fields">
+            <div class="field-row">
+              <div class="field-label-row">
+                <label for="max-players">max-players</label>
+                <span class="help-badge" data-tip="Número máximo de jugadores...">?</span>
+              </div>
+              <input type="number" id="max-players" placeholder="20" />
+            </div>
+            <div class="field-row">
+              <div class="field-label-row">
+                <label for="view-distance">view-distance</label>
+                <span class="help-badge" data-tip="Determina el radio de carga de chunks alrededor de los jugadores.">?</span>
+              </div>
+              <input type="number" id="view-distance" placeholder="10" min="0" max="32" />
+            </div>
+            <div class="field-row">
+              <div class="field-label-row">
+                <label for="simulation-distance">simulation-distance</label>
+                <span class="help-badge" data-tip="Distancia en la que ocurren eventos como crecimiento de cultivos o movimiento de mobs.">?</span>
+              </div>
+              <input type="number" id="simulation-distance" placeholder="10" min="0" max="32" />
+            </div>
+            <div class="field-row">
+              <div class="field-label-row">
+                <label for="difficulty">difficulty</label>
+                <span class="help-badge" data-tip="Nivel de dificultad del juego (Pacífico, Fácil, Normal, Difícil).">?</span>
+              </div>
+              <select id="difficulty">
+                <option value="peaceful">Peaceful</option>
+                <option value="easy">Easy</option>
+                <option value="normal" selected>Normal</option>
+                <option value="hard">Hard</option>
+              </select>
+            </div>
+            <div class="toggle-row">
+              <div class="field-label-row" style="margin-bottom: 0;">
+                <span class="toggle-label">pvp</span>
+                <span class="help-badge" data-tip="Habilita o deshabilita el daño entre jugadores.">?</span>
+              </div>
+              <label class="switch"><input type="checkbox" id="pvp" checked /><span class="slider"></span></label>
+            </div>
+            <div class="field-row">
+              <div class="field-label-row">
+                <label for="gamemode">gamemode</label>
+                <span class="help-badge" data-tip="Modo de juego por defecto para los nuevos jugadores.">?</span>
+              </div>
+              <select id="gamemode">
+                <option value="survival" selected>Survival</option>
+                <option value="creative">Creative</option>
+                <option value="adventure">Adventure</option>
+                <option value="spectator">Spectator</option>
+              </select>
+            </div>
+            <div class="toggle-row">
+               <div class="field-label-row" style="margin-bottom: 0;">
+                 <span class="toggle-label">force-gamemode</span>
+                 <span class="help-badge" data-tip="Obliga a los jugadores a unirse con el modo de juego por defecto.">?</span>
+               </div>
+               <label class="switch"><input type="checkbox" id="force-gamemode" /><span class="slider"></span></label>
+            </div>
+            <div class="toggle-row">
+               <div class="field-label-row" style="margin-bottom: 0;">
+                 <span class="toggle-label">hardcore</span>
+                 <span class="help-badge" data-tip="Si está activo, los jugadores que mueran entrarán en modo espectador permanentemente.">?</span>
+               </div>
+               <label class="switch"><input type="checkbox" id="hardcore" /><span class="slider"></span></label>
+            </div>
+          </div>
+        </section>
+
+        <!-- Mundo -->
+        <section class="settings-card">
+          <div class="settings-card-header">
+            <span class="settings-card-icon">🌍</span>
+            <h3>World</h3>
+          </div>
+          <div class="settings-fields">
+            <div class="field-row">
+              <div class="field-label-row">
+                <label for="max-tick-time">max-tick-time</label>
+                <span class="help-badge" data-tip="Número máximo de milisegundos que un solo tick puede tomar antes de apagar el servidor.">?</span>
+              </div>
+              <input type="number" id="max-tick-time" placeholder="60000" />
+            </div>
+            <div class="field-row">
+              <div class="field-label-row">
+                <label for="spawn-protection">spawn-protection</label>
+                <span class="help-badge" data-tip="Radio de protección del spawn donde los no-OPs no pueden interactuar.">?</span>
+              </div>
+              <input type="number" id="spawn-protection" placeholder="16" />
+            </div>
+            <div class="toggle-row">
+              <div class="field-label-row" style="margin-bottom: 0;">
+                <span class="toggle-label">spawn-monsters</span>
+                <span class="help-badge" data-tip="Habilita la aparición natural de monstruos.">?</span>
+              </div>
+              <label class="switch"><input type="checkbox" id="spawn-monsters" checked /><span class="slider"></span></label>
+            </div>
+            <div class="toggle-row">
+              <div class="field-label-row" style="margin-bottom: 0;">
+                <span class="toggle-label">spawn-npcs</span>
+                <span class="help-badge" data-tip="Habilita la aparición de aldeanos y NPCs.">?</span>
+              </div>
+              <label class="switch"><input type="checkbox" id="spawn-npcs" checked /><span class="slider"></span></label>
+            </div>
+            <div class="toggle-row">
+              <div class="field-label-row" style="margin-bottom: 0;">
+                <span class="toggle-label">spawn-animals</span>
+                <span class="help-badge" data-tip="Habilita la aparición de animales.">?</span>
+              </div>
+              <label class="switch"><input type="checkbox" id="spawn-animals" checked /><span class="slider"></span></label>
+            </div>
+            <div class="toggle-row">
+              <div class="field-label-row" style="margin-bottom: 0;">
+                <span class="toggle-label">allow-nether</span>
+                <span class="help-badge" data-tip="Habilita el acceso a la dimensión del Nether.">?</span>
+              </div>
+              <label class="switch"><input type="checkbox" id="allow-nether" checked /><span class="slider"></span></label>
+            </div>
+            <div class="toggle-row">
+               <div class="field-label-row" style="margin-bottom: 0;">
+                 <span class="toggle-label">allow-end</span>
+                 <span class="help-badge" data-tip="Habilita el acceso a la dimensión del End.">?</span>
+               </div>
+               <label class="switch"><input type="checkbox" id="allow-end" checked /><span class="slider"></span></label>
+            </div>
+          </div>
+        </section>
+
+        <!-- Seguridad -->
+        <section class="settings-card">
+          <div class="settings-card-header">
+            <span class="settings-card-icon">🔒</span>
+            <h3>Conexión y Seguridad</h3>
+          </div>
+          <div class="settings-fields">
+            <div class="field-row">
+              <div class="field-label-row">
+                <label for="motd">motd</label>
+                <span class="help-badge" data-tip="Mensaje del día que aparece en la lista de servidores de Minecraft.">?</span>
+              </div>
+              <div class="motd-icon-row">
+                <input type="text" id="motd" placeholder="A Minecraft Server" />
+                <div class="icon-uploader-card">
+                  <div class="icon-preview-wrap">
+                    <img id="serverIconPreview" class="icon-preview" src="resources/icono.ico" alt="Icono servidor">
+                  </div>
+                  <div class="icon-meta">
+                    <button type="button" id="uploadIconBtn" class="icon-upload-btn">Cambiar icono</button>
+                    <small>Default: <b>resources/icono.ico</b><br>Minecraft usa <b>server-icon.png (64x64)</b></small>
+                  </div>
+                </div>
+                <input type="file" id="server-icon-file" accept=".png,.ico,image/png,image/x-icon" style="display:none;">
+              </div>
+            </div>
+            <div class="toggle-row">
+              <div class="field-label-row" style="margin-bottom: 0;">
+                <span class="toggle-label">whitelist</span>
+                <span class="help-badge" data-tip="Habilita la lista de acceso permitido. Solo jugadores en la whitelist podrán entrar.">?</span>
+              </div>
+              <label class="switch"><input type="checkbox" id="whitelist" /><span class="slider"></span></label>
+            </div>
+            <div class="toggle-row">
+              <div class="field-label-row" style="margin-bottom: 0;">
+                <span class="toggle-label">online-mode</span>
+                <span class="help-badge" data-tip="Verifica las cuentas con Mojang. Si se desactiva, permite cuentas pirata (No recomendado).">?</span>
+              </div>
+              <label class="switch"><input type="checkbox" id="online-mode" checked /><span class="slider"></span></label>
+            </div>
+            <div class="toggle-row">
+              <div class="field-label-row" style="margin-bottom: 0;">
+                <span class="toggle-label">enforce-secure-profile</span>
+                <span class="help-badge" data-tip="Obliga a los jugadores a tener una firma de chat válida proporcionada por Mojang.">?</span>
+              </div>
+              <label class="switch"><input type="checkbox" id="enforce-secure-profile" /><span class="slider"></span></label>
+            </div>
+            <div class="toggle-row">
+              <div class="field-label-row" style="margin-bottom: 0;">
+                <span class="toggle-label">enable-command-block</span>
+                <span class="help-badge" data-tip="Habilita el uso de bloques de comandos en el mundo.">?</span>
+              </div>
+              <label class="switch"><input type="checkbox" id="enable-command-block" /><span class="slider"></span></label>
+            </div>
+            <div class="toggle-row">
+              <div class="field-label-row" style="margin-bottom: 0;">
+                <span class="toggle-label">allow-flight</span>
+                <span class="help-badge" data-tip="Permite que los jugadores vuelen en supervivencia si tienen mods instalados.">?</span>
+              </div>
+              <label class="switch"><input type="checkbox" id="allow-flight" /><span class="slider"></span></label>
+            </div>
+          </div>
+        </section>
+      </div>
+
+      <div class="save-floating">
+        <button id="saveRestartBtn" class="glowing-btn">
+          <span>💾</span> Guardar y reiniciar
+        </button>
+      </div>
+    </main>
+  </div>
+
+  <div id="grToast"></div>
+
+  <script src="js/data.js"></script>
+  <script src="js/global-controls.js"></script>
+  <script src="js/app.js"></script>
+  <script>
+    (function() {
+      const saveBtn = document.getElementById('saveRestartBtn');
+      const allFields = document.querySelectorAll('input, select');
+      const iconFileInput = document.getElementById('server-icon-file');
+      const iconUploadBtn = document.getElementById('uploadIconBtn');
+      const iconPreview = document.getElementById('serverIconPreview');
+      
+      const showToast = (msg, type = 'ok') => {
+        const t = document.getElementById('grToast');
+        t.textContent = msg;
+        t.className = `show toast-${type}`;
+        clearTimeout(t._timer);
+        t._timer = setTimeout(() => { t.className = ''; }, 3000);
+      };
+
+      const loadProperties = async () => {
+        try {
+          const res = await fetch('/api/server/properties');
+          const props = await res.json();
+          allFields.forEach(field => {
+            if (field.type === 'file') return;
+            const propKey = field.id;
+            if (props[propKey] !== undefined) {
+              if (field.type === 'checkbox') field.checked = props[propKey] === 'true';
+              else field.value = props[propKey];
+            }
+          });
+          if (props['online-mode'] === undefined && document.getElementById('online-mode')) document.getElementById('online-mode').checked = true;
+          if (props['enforce-secure-profile'] === undefined && document.getElementById('enforce-secure-profile')) document.getElementById('enforce-secure-profile').checked = false;
+          capture();
+        } catch (e) { console.error("Error loading properties:", e); }
+      };
+      const loadServerIcon = async () => {
+        if (!iconPreview) return;
+        const activeId = (localStorage.getItem('activeInstanceId') || '').trim();
+        const base = activeId
+          ? `/api/server/icon?instanceId=${encodeURIComponent(activeId)}`
+          : '/api/server/icon';
+        const sep = base.includes('?') ? '&' : '?';
+        iconPreview.src = `${base}${sep}t=${Date.now()}`;
+      };
+      const fileToPng64Blob = async (file) => {
+        const objectUrl = URL.createObjectURL(file);
+        try {
+          const img = await new Promise((resolve, reject) => {
+            const image = new Image();
+            image.onload = () => resolve(image);
+            image.onerror = () => reject(new Error('No se pudo leer la imagen'));
+            image.src = objectUrl;
+          });
+          const canvas = document.createElement('canvas');
+          canvas.width = 64;
+          canvas.height = 64;
+          const ctx = canvas.getContext('2d');
+          if (!ctx) throw new Error('No se pudo preparar el conversor de icono');
+          ctx.clearRect(0, 0, 64, 64);
+          ctx.drawImage(img, 0, 0, 64, 64);
+          const blob = await new Promise((resolve, reject) => {
+            canvas.toBlob((b) => {
+              if (!b) reject(new Error('No se pudo generar PNG'));
+              else resolve(b);
+            }, 'image/png');
+          });
+          return blob;
+        } finally {
+          URL.revokeObjectURL(objectUrl);
+        }
+      };
+      const uploadServerIcon = async () => {
+        if (!iconFileInput || !iconFileInput.files || iconFileInput.files.length === 0) return;
+        const file = iconFileInput.files[0];
+        const lower = file.name.toLowerCase();
+        if (!(lower.endsWith('.png') || lower.endsWith('.ico') || (file.type || '').startsWith('image/'))) {
+          showToast('Selecciona una imagen PNG/ICO válida', 'err');
+          return;
+        }
+
+        try {
+          const pngBlob = await fileToPng64Blob(file);
+          const formData = new FormData();
+          formData.append('icon', pngBlob, 'server-icon.png');
+          const res = await fetch('/api/server/icon', { method: 'POST', body: formData });
+          if (!res.ok) throw new Error('No se pudo subir el icono');
+          await loadServerIcon();
+          showToast('✅ Icono del servidor actualizado', 'ok');
+        } catch (e) {
+          showToast('❌ Error al subir icono', 'err');
+        } finally {
+          iconFileInput.value = '';
+        }
+      };
+      const saveProperties = async () => {
+        // Validation for min/max
+        for (let field of allFields) {
+          if (field.type === 'file') continue;
+          if (field.type === 'number') {
+            const n = parseInt(field.value);
+            const min = field.getAttribute('min');
+            const max = field.getAttribute('max');
+            if (min !== null && n < parseInt(min)) { showToast(`Error en ${field.id}: mínimo ${min}`, 'err'); return; }
+            if (max !== null && n > parseInt(max)) { showToast(`Error en ${field.id}: máximo ${max}`, 'err'); return; }
+          }
+        }
+
+        saveBtn.disabled = true;
+        saveBtn.innerHTML = '<span>⏳</span> Guardando...';
+        const props = {};
+        allFields.forEach(field => {
+          if (!field.id || field.type === 'file') return;
+          props[field.id] = field.type === 'checkbox' ? field.checked.toString() : field.value;
+        });
+        try {
+          await fetch('/api/server/properties', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(props)
+          });
+          capture();
+          await fetch('/api/server/stop', { method: 'POST' });
+          setTimeout(() => fetch('/api/server/start', { method: 'POST' }), 2000);
+          saveBtn.innerHTML = '<span>✅</span> ¡Guardado!';
+          showToast('✅ Cambios guardados. El servidor se está reiniciando...', 'ok');
+          setTimeout(() => {
+             saveBtn.disabled = false;
+             saveBtn.innerHTML = '<span>💾</span> Guardar y reiniciar';
+          }, 2000);
+        } catch (e) { 
+          saveBtn.innerHTML = '<span>❌</span> Error'; 
+          saveBtn.disabled = false; 
+          showToast('❌ Ocurrió un error al guardar', 'err');
+        }
+      };
+      let initialValues = {};
+      const capture = () => {
+        allFields.forEach(f => {
+          if (!f.id || f.type === 'file') return;
+          initialValues[f.id] = f.type==='checkbox' ? f.checked : f.value;
+        });
+      };
+      window.addEventListener('load', () => {
+        loadProperties();
+        loadServerIcon();
+      });
+      if (saveBtn) saveBtn.addEventListener('click', saveProperties);
+      if (iconUploadBtn) iconUploadBtn.addEventListener('click', () => iconFileInput && iconFileInput.click());
+      if (iconFileInput) iconFileInput.addEventListener('change', uploadServerIcon);
+      window.addEventListener('beforeunload', (e) => {
+        let changed = false;
+        allFields.forEach(f => {
+          if (!f.id || f.type === 'file') return;
+          if ((f.type==='checkbox' ? f.checked : f.value) !== initialValues[f.id]) changed = true;
+        });
+        if (changed) { e.preventDefault(); e.returnValue = ''; }
+      });
+    })();
+  </script>
+</body>
+</html>

@@ -1,0 +1,64 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<script>document.documentElement.classList.add('page-boot-loading');setTimeout(function(){document.documentElement.classList.remove('page-boot-loading');},5000);</script>
+<title>MC Host - Instancias</title>
+  <link rel="icon" type="image/png" href="resources/icono.png">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" />
+  <link rel="stylesheet" href="css/base.css" />
+  <link rel="stylesheet" href="css/layout.css" />
+  <link rel="stylesheet" href="css/components.css" />
+  <link rel="stylesheet" href="css/instances.css" />
+  <link rel="stylesheet" href="css/responsive.css" />
+</head>
+<body>
+  <div class="layout">
+    <aside class="sidebar">
+      <img src="resources/marcternos_logo.png" alt="MARCTERNOS" class="sidebar-logo-img">
+      <nav>
+        <a class="nav-link active" href="instances.html"><i class="fa-solid fa-layer-group"></i> Instancias</a>
+        <button id="openDeleteWorldsBtn" class="nav-danger-btn"><i class="fa-solid fa-trash"></i> Borrar mundos</button>
+      </nav>
+    </aside>
+
+    <main class="main-content">
+      <header class="topbar">
+        <div>
+          <h2>Instancias</h2>
+          <p class="small-text">Selecciona una instancia para entrar a su panel.</p>
+        </div>
+        <div>
+          <a class="btn primary" href="create-world.html"><i class="fa-solid fa-plus"></i> Nueva instancia</a>
+        </div>
+      </header>
+
+      <section class="card">
+        <div class="card-header-row">
+          <h3>Mis mundos</h3>
+          <button id="refreshInstancesBtn" class="btn secondary">Actualizar</button>
+        </div>
+        <div id="instancesGrid" class="instances-grid"></div>
+      </section>
+    </main>
+  </div>
+
+  <div id="deleteWorldsModal" class="instances-modal hidden">
+    <div class="instances-modal-content">
+      <div class="instances-modal-header">
+        <h3>Borrar mundos</h3>
+        <button id="closeDeleteWorldsBtn" class="btn secondary">Cerrar</button>
+      </div>
+      <p class="small-text">Pulsa dos veces el botón de borrar para confirmar cada mundo.</p>
+      <div id="deleteWorldsList" class="delete-worlds-list"></div>
+    </div>
+  </div>
+
+  <script src="js/page-loader.js"></script>
+  <script src="js/global-controls.js"></script>
+  <script src="js/instances.js"></script>
+</body>
+</html>
+

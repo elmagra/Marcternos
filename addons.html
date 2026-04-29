@@ -1,0 +1,320 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8" />
+    
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>MC Host - Addons & Mods</title>
+    <link rel="icon" type="image/png" href="resources/icono.png">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" />
+    <link rel="stylesheet" href="css/base.css" />
+    <link rel="stylesheet" href="css/layout.css" />
+    <link rel="stylesheet" href="css/components.css" />
+    <link rel="stylesheet" href="css/responsive.css" />
+    <style>
+        .addons-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+            gap: 15px;
+            margin-top: 20px;
+        }
+
+        .addon-card {
+            background: #0f172a;
+            border: 1px solid #1e293b;
+            border-radius: 12px;
+            padding: 16px;
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+            transition: all 0.3s ease;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .addon-card:hover {
+            transform: translateY(-3px);
+            border-color: #3b82f6;
+            box-shadow: 0 8px 25px -5px rgba(59, 130, 246, 0.2);
+        }
+
+        .addon-header {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .addon-icon {
+            width: 48px;
+            height: 48px;
+            background: rgba(59, 130, 246, 0.05);
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 20px;
+            color: #3b82f6;
+            border: 1px solid rgba(59, 130, 246, 0.1);
+            flex-shrink: 0;
+            overflow: hidden;
+        }
+
+        .addon-icon img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+
+        .addon-info {
+            display: flex;
+            flex-direction: column;
+        }
+
+        .addon-name {
+            font-weight: 700;
+            color: #f1f5f9;
+            font-size: 14px;
+        }
+
+        .addon-tag {
+            font-size: 9px;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            font-weight: 800;
+            color: #3b82f6;
+        }
+
+        .addon-description {
+            font-size: 12px;
+            color: #94a3b8;
+            line-height: 1.4;
+            min-height: 34px;
+        }
+
+        .addon-footer {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-top: auto;
+            padding-top: 15px;
+            border-top: 1px solid #1e293b;
+        }
+
+        .addon-type {
+            display: flex;
+            gap: 8px;
+        }
+
+        .type-badge {
+            font-size: 11px;
+            padding: 4px 8px;
+            border-radius: 6px;
+            font-weight: 600;
+        }
+
+        .badge-mod { background: rgba(59, 130, 246, 0.1); color: #3b82f6; border: 1px solid rgba(59, 130, 246, 0.2); }
+        .badge-plugin { background: rgba(168, 85, 247, 0.1); color: #a855f7; border: 1px solid rgba(168, 85, 247, 0.2); }
+
+        .btn-install, .btn-delete {
+            width: 100%;
+            padding: 12px;
+            border-radius: 12px;
+            border: 1px solid transparent;
+            font-weight: 700;
+            font-size: 13px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            text-transform: uppercase;
+            letter-spacing: 0.02em;
+        }
+
+        .btn-install {
+            background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%);
+            color: #fff;
+            box-shadow: 0 4px 15px rgba(59, 130, 246, 0.3);
+        }
+
+        .btn-install:hover:not(:disabled) {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(59, 130, 246, 0.4);
+            filter: brightness(1.1);
+        }
+
+        .btn-delete {
+            background: rgba(239, 68, 68, 0.05);
+            color: #ef4444;
+            border: 1px solid rgba(239, 68, 68, 0.2);
+        }
+
+        .btn-delete:hover {
+            background: #ef4444;
+            color: #fff;
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(239, 68, 68, 0.3);
+        }
+
+        .btn-install:disabled {
+            background: #1e293b;
+            color: #475569;
+            cursor: not-allowed;
+        }
+
+        .installed-badge {
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            background: #22c55e;
+            color: #fff;
+            font-size: 9px;
+            font-weight: 800;
+            padding: 4px 8px;
+            border-radius: 20px;
+            text-transform: uppercase;
+            box-shadow: 0 4px 10px rgba(34, 197, 94, 0.3);
+            display: flex;
+            align-items: center;
+            gap: 4px;
+        }
+
+        .incompatibility-notice {
+            color: #ef4444;
+            font-size: 11px;
+            font-weight: 700;
+            margin-top: 8px;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            background: rgba(239, 68, 68, 0.05);
+            padding: 8px;
+            border-radius: 6px;
+            border-left: 2px solid #ef4444;
+        }
+
+        .filters {
+            display: flex;
+            gap: 12px;
+            margin-bottom: 30px;
+            flex-wrap: wrap;
+        }
+
+        .filter-btn {
+            background: rgba(255, 255, 255, 0.03);
+            border: 1px solid rgba(255, 255, 255, 0.05);
+            color: #94a3b8;
+            padding: 8px 16px;
+            border-radius: 12px;
+            font-size: 14px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .filter-btn.active {
+            background: #3b82f6;
+            color: white;
+            border-color: #3b82f6;
+        }
+
+        .status-overlay {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            z-index: 1000;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+
+        .toast {
+            background: #1e293b;
+            border: 1px solid #334155;
+            color: white;
+            padding: 12px 20px;
+            border-radius: 12px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+            animation: slideIn 0.3s ease forwards;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            font-size: 14px;
+        }
+
+        @keyframes slideIn {
+            from { transform: translateX(100%); opacity: 0; }
+            to { transform: translateX(0); opacity: 1; }
+        }
+
+        .top-info {
+            background: rgba(59, 130, 246, 0.05);
+            border: 1px dashed rgba(59, 130, 246, 0.3);
+            border-radius: 16px;
+            padding: 15px 20px;
+            margin-bottom: 30px;
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            color: #94a3b8;
+            font-size: 14px;
+        }
+    </style>
+</head>
+<body>
+    <div class="layout">
+        <aside class="sidebar">
+            <img src="resources/marcternos_logo.png" alt="MARCTERNOS" class="sidebar-logo-img">
+      <a class="back-to-instances" href="instances.html"><i class="fa-solid fa-arrow-left"></i> Volver a instancias</a>
+            <nav id="sidebarNav">
+                <a class="nav-link" href="index.html"><i class="fa-solid fa-gauge-high"></i> Dashboard</a>
+                <a class="nav-link" href="players.html"><i class="fa-solid fa-users"></i> Jugadores</a>
+                <a class="nav-link" href="files.html"><i class="fa-solid fa-folder-open"></i> Archivos</a>
+                <a class="nav-link" href="backups.html"><i class="fa-solid fa-box-archive"></i> Backups</a>
+                <a class="nav-link" href="properties.html"><i class="fa-solid fa-sliders"></i> Propiedades</a>
+                <a class="nav-link" href="gamerules.html"><i class="fa-solid fa-scroll"></i> Gamerules</a>
+                <a class="nav-link active" href="addons.html"><i class="fa-solid fa-puzzle-piece"></i> Plugins & Mods</a>
+            </nav>
+        </aside>
+
+        <main class="main-content">
+            <header class="topbar">
+                <div>
+                    <h1>Plugins & Mods</h1>
+                    <p class="small-text">Instala complementos para optimizar o mejorar tu servidor</p>
+                </div>
+                <div class="topbar-controls" id="topbarStats">
+                    <div class="topbar-status">
+                        <div class="status-dot dot-offline" id="globalStatusDot"></div>
+                        <span class="topbar-status-text" id="globalStatusText">Apagado</span>
+                    </div>
+                </div>
+            </header>
+
+            <div class="top-info">
+                <i class="fa-solid fa-circle-info" style="color: #3b82f6; font-size: 1.5rem;"></i>
+                <div>
+                    <strong>RecomendaciÃ³n:</strong> Apaga el servidor antes de instalar addons. Los mods se instalan en <code>/mods</code> y los plugins en <code>/plugins</code>. Algunos funcionan en ambos (como Spark o LuckPerms).
+                </div>
+            </div>
+
+            <div class="filters">
+                <button class="filter-btn active" data-filter="all">Todos</button>
+                <button class="filter-btn" data-filter="optimization">OptimizaciÃ³n</button>
+                <button class="filter-btn" data-filter="utility">Utilidad</button>
+                <button class="filter-btn" data-filter="mod">SÃ³lo Mods</button>
+                <button class="filter-btn" data-filter="plugin">SÃ³lo Plugins</button>
+            </div>
+
+            <div class="addons-grid" id="addonsGrid">
+                <!-- Addons will be injected here by JS -->
+            </div>
+        </main>
+    </div>
+
+    <div class="status-overlay" id="toastContainer"></div>
+<script src="js/global-controls.js"></script>
+    <script src="js/addons.js"></script>
+</body>
+</html>

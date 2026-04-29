@@ -1,0 +1,157 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>MC Host - Archivos</title>
+  <link rel="icon" type="image/png" href="resources/icono.png">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" />
+<link rel="stylesheet" href="css/base.css" />
+  <link rel="stylesheet" href="css/layout.css" />
+  <link rel="stylesheet" href="css/components.css" />
+  <link rel="stylesheet" href="css/responsive.css" />
+  <link rel="stylesheet" href="css/files.css" />
+</head>
+<body>
+  <div class="layout">
+    <aside class="sidebar">
+      <img src="resources/marcternos_logo.png" alt="MARCTERNOS" class="sidebar-logo-img">
+      <a class="back-to-instances" href="instances.html"><i class="fa-solid fa-arrow-left"></i> Volver a instancias</a>
+
+      <nav>
+        <a class="nav-link" href="index.html"><i class="fa-solid fa-gauge-high"></i> Dashboard</a>
+        <a class="nav-link" href="players.html"><i class="fa-solid fa-users"></i> Jugadores</a>
+        <a class="nav-link active" href="files.html"><i class="fa-solid fa-folder-open"></i> Archivos</a>
+        <a class="nav-link" href="backups.html"><i class="fa-solid fa-box-archive"></i> Backups</a>
+        <a class="nav-link" href="properties.html"><i class="fa-solid fa-sliders"></i> Propiedades</a>
+        <a class="nav-link" href="gamerules.html"><i class="fa-solid fa-scroll"></i> Gamerules</a>
+        <a class="nav-link" href="addons.html"><i class="fa-solid fa-puzzle-piece"></i> Plugins &amp; Mods</a>
+      </nav>
+    </aside>
+
+    <main class="main-content">
+      <header class="topbar">
+        <div class="page-title">
+          <h1 style="font-size: 2.2rem; font-weight: 900; letter-spacing: -0.02em; background: linear-gradient(135deg, #fff 0%, #94a3b8 100%); -webkit-background-clip: text; background-clip: text; -webkit-text-fill-color: transparent;">Gestor de Archivos</h1>
+          <div style="display: flex; align-items: center; gap: 8px; margin-top: 4px;">
+            <i class="fa-solid fa-folder-tree" style="color: #3b82f6; font-size: 0.8rem;"></i>
+            <span id="breadcrumbContainer" class="premium-breadcrumbs">/</span>
+          </div>
+        </div>
+
+        <div class="topbar-controls" style="background: rgba(15, 23, 42, 0.4); border: 1px solid rgba(255,255,255,0.05); padding: 10px 20px; border-radius: 20px;">
+          <div class="topbar-status">
+            <div class="status-dot dot-offline" id="globalStatusDot" style="width: 12px; height: 12px;"></div>
+            <span class="topbar-status-text" id="globalStatusText" style="text-transform: uppercase; letter-spacing: 0.05em; font-size: 0.75rem; font-weight: 800;">Apagado</span>
+          </div>
+          <div class="topbar-actions" style="margin-left: 10px;">
+            <button class="btn success" id="globalStartBtn" style="padding: 10px 18px; border-radius: 14px; box-shadow: 0 4px 15px -5px rgba(34, 197, 94, 0.4);"><i class="fa-solid fa-play"></i> INICIAR</button>
+            <button class="btn secondary" id="globalRestartBtn" style="padding: 10px 18px; border-radius: 14px;"><i class="fa-solid fa-rotate"></i></button>
+            <button class="btn danger" id="globalStopBtn" style="padding: 10px 18px; border-radius: 14px; box-shadow: 0 4px 15px -5px rgba(239, 68, 68, 0.4);"><i class="fa-solid fa-stop"></i></button>
+          </div>
+        </div>
+      </header>
+
+      <section class="card premium-card" style="padding: 0; background: rgba(15, 23, 42, 0.6); border-radius: 28px; border: 1px solid rgba(255,255,255,0.05); overflow: hidden;">
+        <div style="padding: 20px 30px; background: rgba(255,255,255,0.02); border-bottom: 1px solid rgba(255,255,255,0.05); display: flex; justify-content: space-between; align-items: center;">
+          <div style="display: flex; gap: 12px;">
+            <label for="fileUploadInput" class="btn primary" style="padding: 10px 24px; border-radius: 14px; background: #3b82f6; font-weight: 700; letter-spacing: 0.05em;">
+              <i class="fa-solid fa-cloud-arrow-up"></i> SUBIR ARCHIVO
+            </label>
+            <input type="file" id="fileUploadInput" style="display: none;" multiple>
+            <button class="btn secondary" id="createFolderBtn" style="padding: 10px 20px; border-radius: 14px;">
+              <i class="fa-solid fa-folder-plus"></i> NUEVA CARPETA
+            </button>
+            <button class="btn secondary" id="downloadAllBtn" style="padding: 10px 20px; border-radius: 14px; color: #a855f7;">
+              <i class="fa-solid fa-file-zipper"></i> DESCARGAR TODO
+            </button>
+          </div>
+          <div style="color: #64748b; font-size: 0.85rem; font-weight: 600;">
+            <i class="fa-solid fa-circle-info" style="color: #3b82f6; margin-right: 5px;"></i> Selecciona un archivo para editarlo
+          </div>
+        </div>
+
+        <div class="file-list-container" style="max-height: 600px; overflow-y: auto; padding: 10px 20px 20px 20px;">
+          <table class="file-table premium-table">
+            <thead>
+              <tr>
+                <th style="padding-left: 20px;">Nombre</th>
+                <th style="width: 8rem;">Tamaño</th>
+                <th style="width: 10rem;">Modificado</th>
+                <th style="width: 12rem; text-align: right; padding-right: 20px;">Acciones</th>
+              </tr>
+            </thead>
+            <tbody id="fileListBody">
+              <!-- Cargado por JS -->
+            </tbody>
+          </table>
+        </div>
+      </section>
+    </main>
+  </div>
+
+  <!-- Modal para Editor de Archivo -->
+  <div id="editorModal" class="modal-overlay" style="display: none;">
+    <div class="modal-card" style="width: 900px; max-width: 95vw; height: 80vh; padding: 0; display: flex; flex-direction: column;">
+      <div style="padding: 20px 30px; border-bottom: 1px solid rgba(255,255,255,0.05); display: flex; justify-content: space-between; align-items: center;">
+        <h3 id="editorFileName" style="margin: 0; font-size: 1.2rem;">editando_archivo.txt</h3>
+        <button onclick="$('editorModal').style.display='none'" class="btn secondary" style="padding: 8px; border-radius: 50%; width: 32px; height: 32px; justify-content: center;"><i class="fa-solid fa-xmark"></i></button>
+      </div>
+      <div style="flex: 1; padding: 20px; background: rgba(0,0,0,0.3);">
+        <textarea id="fileEditorTextArea" style="width: 100%; height: 100%; background: transparent; border: none; color: #cbd5e1; font-family: 'JetBrains Mono', monospace; font-size: 13px; outline: none; resize: none;"></textarea>
+      </div>
+      <div style="padding: 20px 30px; border-top: 1px solid rgba(255,255,255,0.05); display: flex; justify-content: flex-end; gap: 12px;">
+        <button onclick="$('editorModal').style.display='none'" class="btn secondary">CANCELAR</button>
+        <button id="saveFileBtn" class="btn primary"><i class="fa-solid fa-save"></i> GUARDAR CAMBIOS</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal de Progreso de Subida -->
+  <div id="uploadModal" class="modal-overlay">
+    <div class="modal-card" style="width: 400px; text-align: center;">
+      <div style="width: 60px; height: 60px; background: rgba(59, 130, 246, 0.1); border-radius: 50%; display: flex; align-items: center; justify-content: center; margin: 0 auto 20px;">
+        <i class="fa-solid fa-cloud-arrow-up" style="color: #3b82f6; font-size: 1.5rem;"></i>
+      </div>
+      <h3 id="uploadStatusText">Subiendo archivos...</h3>
+      <div class="progress-bar" style="height: 10px; margin: 20px 0;"><div id="uploadProgressBar" class="progress-fill premium-fill-blue" style="width: 0%"></div></div>
+      <p style="color: #64748b; font-size: 0.85rem;">Por favor, no cierres esta ventana.</p>
+    </div>
+  </div>
+
+  <style>
+    .premium-breadcrumbs { color: #94a3b8; font-size: 0.95rem; font-weight: 500; display: flex; gap: 5px; cursor: default; }
+    .breadcrumb-item { cursor: pointer; color: #3b82f6; font-weight: 600; padding: 2px 6px; border-radius: 6px; transition: 0.3s; }
+    .breadcrumb-item:hover { background: rgba(59, 130, 246, 0.1); color: #60a5fa; }
+    .premium-table th { 
+      background: rgba(15, 23, 42, 0.9); 
+      backdrop-filter: blur(8px);
+      color: #94a3b8; 
+      font-size: 0.75rem; 
+      font-weight: 800; 
+      text-transform: uppercase; 
+      letter-spacing: 0.1em; 
+      border-bottom: 1px solid rgba(255,255,255,0.05); 
+      position: sticky;
+      top: 0;
+      z-index: 10;
+    }
+    .file-row { transition: all 0.2s; border-bottom: 1px solid rgba(255,255,255,0.02); }
+    .file-row:hover { background: rgba(255,255,255,0.02); transform: translateX(2px); }
+    .file-icon { font-size: 1.2rem; width: 32px; display: inline-flex; justify-content: center; }
+    .folder-icon { color: #f59e0b; }
+    .file-icon-generic { color: #94a3b8; }
+    .file-icon-jar { color: #ef4444; }
+    .action-btn { color: #64748b; background: transparent; border: none; cursor: pointer; font-size: 1rem; padding: 8px; border-radius: 8px; transition: 0.3s; }
+    .action-btn:hover { color: #fff; background: rgba(255,255,255,0.08); }
+    .action-btn.delete:hover { color: #ef4444; background: rgba(239, 68, 68, 0.1); }
+    .action-btn.download-file:hover, .action-btn.download-folder:hover { color: #3b82f6; background: rgba(59, 130, 246, 0.1); }
+    .action-btn.rename-btn:hover { color: #f59e0b; background: rgba(245, 158, 11, 0.1); }
+  </style>
+
+  <script src="js/data.js"></script>
+<script src="js/global-controls.js"></script>
+  <script src="js/files.js"></script>
+</body>
+</html>

@@ -1,0 +1,23 @@
+{
+  "name": "demominecraft",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "start": "node src/server.js",
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "archiver": "^7.0.1",
+    "axios": "^1.13.6",
+    "cors": "^2.8.6",
+    "express": "^5.2.1",
+    "formidable": "^3.5.4",
+    "fs-extra": "^11.3.4",
+    "os-utils": "^0.0.14",
+    "prismarine-nbt": "^2.8.0"
+  }
+}

@@ -1,0 +1,652 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>MARCTERNOS | Gamerules</title>
+  <link rel="icon" type="image/png" href="resources/icono.png">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" />
+  <link rel="stylesheet" href="css/base.css" />
+  <link rel="stylesheet" href="css/layout.css" />
+  <link rel="stylesheet" href="css/components.css" />
+  <link rel="stylesheet" href="css/properties.css" />
+  <link rel="stylesheet" href="css/responsive.css" />
+  <style>
+    /* â”€â”€ Gamerules page extras â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
+    .gr-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+      gap: 18px;
+      padding-bottom: 50px;
+      margin-top: 22px;
+    }
+
+    .gr-card {
+      background: #111827;
+      border: 1px solid #1f2937;
+      border-radius: 16px;
+      display: flex;
+      flex-direction: column;
+      transition: border-color .2s, box-shadow .2s;
+    }
+    .gr-card:hover {
+      border-color: #2563eb55;
+      box-shadow: 0 4px 22px rgba(37,99,235,.1);
+    }
+
+    .gr-card-header {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 13px 18px 11px;
+      border-bottom: 1px solid #1f2937;
+      background: #0f172a;
+      border-radius: 16px 16px 0 0;
+    }
+    .gr-card-header h3 {
+      margin: 0;
+      font-size: 13px;
+      font-weight: 600;
+      color: #e2e8f0;
+      letter-spacing: .02em;
+    }
+    .gr-card-body {
+      padding: 12px 16px;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+
+    /* â”€ Rule row  â”€ */
+    .rule-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      padding: 10px 14px;
+      background: #0f172a;
+      border: 1px solid #1e293b;
+      border-radius: 12px;
+      transition: background .15s;
+    }
+    .rule-row:hover { background: #0d1526; }
+
+    .rule-info { 
+      display: flex; 
+      align-items: flex-start;
+      flex-direction: column;
+      gap: 6px; 
+      flex: 1;
+      min-width: 0;
+    }
+    .rule-name  { 
+      font-size: 12px;
+      font-weight: 700;
+      color: #e2e8f0;
+      letter-spacing: .02em;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+    .rule-technical {
+      font-size: 10px;
+      font-weight: 600;
+      color: #64748b;
+      letter-spacing: .03em;
+      font-family: 'JetBrains Mono', monospace;
+    }
+    .rule-desc  { display: none; }
+
+    /* toggle */
+    .rule-row .switch { width: 36px; height: 20px; flex-shrink: 0; }
+
+    /* number/select input */
+    .rule-input {
+      width: 90px;
+      padding: 5px 8px;
+      border-radius: 8px;
+      border: 1px solid #1e293b;
+      background: #070e1a;
+      color: #e2e8f0;
+      font-size: 13px;
+      text-align: right;
+      transition: border-color .15s, box-shadow .15s;
+    }
+    .rule-input:focus {
+      outline: none;
+      border-color: #2563eb;
+      box-shadow: 0 0 0 2px rgba(37,99,235,.18);
+    }
+
+    /* apply button per rule */
+    .btn-apply {
+      padding: 5px 12px;
+      border-radius: 8px;
+      border: none;
+      background: linear-gradient(135deg, #2563eb, #1d4ed8);
+      color: #fff;
+      font-size: 11px;
+      font-weight: 700;
+      cursor: pointer;
+      letter-spacing: .04em;
+      transition: opacity .2s, transform .15s;
+      white-space: nowrap;
+    }
+    .btn-apply:hover  { opacity: .85; transform: translateY(-1px); }
+    .btn-apply:active { transform: scale(.97); }
+    .btn-apply.ok     { background: linear-gradient(135deg, #16a34a, #15803d); }
+    .btn-apply.err    { background: linear-gradient(135deg, #dc2626, #b91c1c); }
+
+    /* toast */
+    #grToast {
+      position: fixed;
+      bottom: 28px;
+      left: 50%;
+      transform: translateX(-50%) translateY(20px);
+      background: #1e3058;
+      border: 1px solid #3b82f6;
+      color: #e2e8f0;
+      padding: 12px 22px;
+      border-radius: 12px;
+      font-size: 13px;
+      font-weight: 600;
+      box-shadow: 0 8px 30px rgba(0,0,0,.5);
+      opacity: 0;
+      transition: opacity .3s, transform .3s;
+      z-index: 9999;
+      pointer-events: none;
+    }
+    #grToast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+    #grToast.toast-ok  { background: #14532d; border-color: #22c55e; color: #bbf7d0; }
+    #grToast.toast-err { background: #450a0a; border-color: #ef4444; color: #fecaca; }
+
+    /* offline warning banner */
+    #offlineWarning {
+      display: none;
+      align-items: center;
+      gap: 10px;
+      background: rgba(245,158,11,.1);
+      border: 1px solid rgba(245,158,11,.4);
+      color: #fbbf24;
+      padding: 10px 18px;
+      border-radius: 12px;
+      font-size: 13px;
+      font-weight: 600;
+      margin-top: 16px;
+    }
+    #offlineWarning.visible { display: flex; }
+
+    /* category icon color per section */
+    .icon-purple { color: #a855f7; }
+    .icon-green  { color: #22c55e; }
+    .icon-blue   { color: #3b82f6; }
+    .icon-orange { color: #f59e0b; }
+    .icon-red    { color: #ef4444; }
+    .icon-cyan   { color: #06b6d4; }
+  </style>
+</head>
+<body>
+  <div class="layout">
+    <aside class="sidebar">
+      <img src="resources/marcternos_logo.png" alt="MARCTERNOS" class="sidebar-logo-img">
+      <a class="back-to-instances" href="instances.html"><i class="fa-solid fa-arrow-left"></i> Volver a instancias</a>
+      <nav>
+        <a class="nav-link" href="index.html"><i class="fa-solid fa-gauge-high"></i> Dashboard</a>
+        <a class="nav-link" href="players.html"><i class="fa-solid fa-users"></i> Jugadores</a>
+        <a class="nav-link" href="files.html"><i class="fa-solid fa-folder-open"></i> Archivos</a>
+        <a class="nav-link" href="backups.html"><i class="fa-solid fa-box-archive"></i> Backups</a>
+        <a class="nav-link" href="properties.html"><i class="fa-solid fa-sliders"></i> Propiedades</a>
+        <a class="nav-link active" href="gamerules.html"><i class="fa-solid fa-scroll"></i> Gamerules</a>
+        <a class="nav-link" href="addons.html"><i class="fa-solid fa-puzzle-piece"></i> Plugins & Mods</a>
+      </nav>
+    </aside>
+
+    <main class="main-content">
+      <header class="topbar">
+        <div class="page-title">
+          <h1 style="font-size:2.2rem;font-weight:900;letter-spacing:-.02em;background:linear-gradient(135deg,#fff 0%,#94a3b8 100%);-webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent;">Reglas de Juego</h1>
+          <div style="display:flex;align-items:center;gap:8px;margin-top:4px;">
+            <i class="fa-solid fa-scroll" style="color:#a855f7;font-size:.8rem;"></i>
+            <span style="color:#94a3b8;font-size:.95rem;font-weight:500;">Los cambios se aplican al instante en el servidor activo</span>
+          </div>
+        </div>
+        <div class="topbar-controls" style="background:rgba(15,23,42,.4);border:1px solid rgba(255,255,255,.05);padding:10px 20px;border-radius:20px;">
+          <div class="topbar-status">
+            <div class="status-dot dot-offline" id="globalStatusDot" style="width:12px;height:12px;"></div>
+            <span class="topbar-status-text" id="globalStatusText" style="text-transform:uppercase;letter-spacing:.05em;font-size:.75rem;font-weight:800;">Apagado</span>
+          </div>
+          <div class="topbar-actions" style="margin-left:10px;">
+            <button class="btn success" id="globalStartBtn" style="padding:10px 18px;border-radius:14px;box-shadow:0 4px 15px -5px rgba(34,197,94,.4);"><i class="fa-solid fa-play"></i> INICIAR</button>
+            <button class="btn secondary" id="globalRestartBtn" style="padding:10px 18px;border-radius:14px;"><i class="fa-solid fa-rotate"></i></button>
+            <button class="btn danger" id="globalStopBtn" style="padding:10px 18px;border-radius:14px;box-shadow:0 4px 15px -5px rgba(239,68,68,.4);"><i class="fa-solid fa-stop"></i></button>
+          </div>
+        </div>
+      </header>
+
+      <!-- Offline warning -->
+      <div id="offlineWarning">
+        <i class="fa-solid fa-triangle-exclamation"></i>
+        <span>El servidor estï¿½ apagado. Los cambios de gamerule <strong>solo se aplican con el servidor encendido.</strong></span>
+      </div>
+
+      <!-- Grid of rule cards -->
+      <div class="gr-grid">
+
+        <!-- â”€â”€ JUGADORES â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ -->
+        <div class="gr-card">
+          <div class="gr-card-header">
+            <i class="fa-solid fa-user-shield icon-purple"></i>
+            <h3>Jugadores</h3>
+          </div>
+          <div class="gr-card-body">
+
+            <!-- keepInventory -->
+            <div class="rule-row">
+              <div class="rule-info">
+                <span class="rule-name">keepInventory</span>
+                <span class="help-badge" data-tip="Mantener inventario al morir">?</span>
+              </div>
+              <label class="switch">
+                <input type="checkbox" id="keepInventory" onchange="applyToggle('keepInventory', this)">
+                <span class="slider"></span>
+              </label>
+            </div>
+
+            <!-- doImmediateRespawn -->
+            <div class="rule-row">
+              <div class="rule-info">
+                <span class="rule-name">doImmediateRespawn</span>
+                <span class="help-badge" data-tip="Respawn inmediato (sin pantalla de muerte)">?</span>
+              </div>
+              <label class="switch">
+                <input type="checkbox" id="doImmediateRespawn" onchange="applyToggle('doImmediateRespawn', this)">
+                <span class="slider"></span>
+              </label>
+            </div>
+
+            <!-- playersSleepingPercentage -->
+            <div class="rule-row">
+              <div class="rule-info">
+                <span class="rule-name">playersSleepingPercentage</span>
+                <span class="help-badge" data-tip="Porcentaje de jugadores que deben dormir para pasar la noche (0 = uno basta)">?</span>
+              </div>
+              <div style="display:flex;align-items:center;vertical-align:middle;gap:6px;flex-shrink:0;">
+                <input type="number" class="rule-input" id="playersSleepingPercentage" value="100" min="0" max="100">
+                <button class="btn-apply" onclick="applyNumber('playersSleepingPercentage')">OK</button>
+              </div>
+            </div>
+
+            <!-- showDeathMessages -->
+            <div class="rule-row">
+              <div class="rule-info">
+                <span class="rule-name">showDeathMessages</span>
+                <span class="help-badge" data-tip="Mostrar mensajes de muerte en el chat">?</span>
+              </div>
+              <label class="switch">
+                <input type="checkbox" id="showDeathMessages" checked onchange="applyToggle('showDeathMessages', this)">
+                <span class="slider"></span>
+              </label>
+            </div>
+
+            <!-- announceAdvancements -->
+            <div class="rule-row">
+              <div class="rule-info">
+                <span class="rule-name">announceAdvancements</span>
+                <span class="help-badge" data-tip="Anunciar en chat cuando alguien logra un avance">?</span>
+              </div>
+              <label class="switch">
+                <input type="checkbox" id="announceAdvancements" checked onchange="applyToggle('announceAdvancements', this)">
+                <span class="slider"></span>
+              </label>
+            </div>
+
+          </div>
+        </div>
+
+        <!-- â”€â”€ COMBATE / DIFICULTAD â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ -->
+        <div class="gr-card">
+          <div class="gr-card-header">
+            <i class="fa-solid fa-skull-crossbones icon-red"></i>
+            <h3>Combate y Dificultad</h3>
+          </div>
+          <div class="gr-card-body">
+
+            <!-- naturalRegeneration -->
+            <div class="rule-row">
+              <div class="rule-info">
+                <span class="rule-name">naturalRegeneration</span>
+                <span class="help-badge" data-tip="Regeneraciï¿½n natural de vida">?</span>
+              </div>
+              <label class="switch">
+                <input type="checkbox" id="naturalRegeneration" checked onchange="applyToggle('naturalRegeneration', this)">
+                <span class="slider"></span>
+              </label>
+            </div>
+
+            <!-- forgiveDeadPlayers -->
+            <div class="rule-row">
+              <div class="rule-info">
+                <span class="rule-name">forgiveDeadPlayers</span>
+                <span class="help-badge" data-tip="Los mobs olvidan atacar al jugador muerto">?</span>
+              </div>
+              <label class="switch">
+                <input type="checkbox" id="forgiveDeadPlayers" checked onchange="applyToggle('forgiveDeadPlayers', this)">
+                <span class="slider"></span>
+              </label>
+            </div>
+
+            <!-- universalAnger -->
+            <div class="rule-row">
+              <div class="rule-info">
+                <span class="rule-name">universalAnger</span>
+                <span class="help-badge" data-tip="Mobs neutrales atacan a todos los jugadores al ser golpeados">?</span>
+              </div>
+              <label class="switch">
+                <input type="checkbox" id="universalAnger" onchange="applyToggle('universalAnger', this)">
+                <span class="slider"></span>
+              </label>
+            </div>
+
+            <!-- disableRaids -->
+            <div class="rule-row">
+              <div class="rule-info">
+                <span class="rule-name">disableRaids</span>
+                <span class="help-badge" data-tip="Desactivar incursiones de pillagers">?</span>
+              </div>
+              <label class="switch">
+                <input type="checkbox" id="disableRaids" onchange="applyToggle('disableRaids', this)">
+                <span class="slider"></span>
+              </label>
+            </div>
+
+          </div>
+        </div>
+
+        <!-- â”€â”€ MUNDO / GENERACIÃ“N â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ -->
+        <div class="gr-card">
+          <div class="gr-card-header">
+            <i class="fa-solid fa-earth-europe icon-green"></i>
+            <h3>Mundo y Generaciï¿½n</h3>
+          </div>
+          <div class="gr-card-body">
+
+            <!-- doDaylightCycle -->
+            <div class="rule-row">
+              <div class="rule-info">
+                <span class="rule-name">doDaylightCycle</span>
+                <span class="help-badge" data-tip="Activar el ciclo dï¿½a/noche">?</span>
+              </div>
+              <label class="switch">
+                <input type="checkbox" id="doDaylightCycle" checked onchange="applyToggle('doDaylightCycle', this)">
+                <span class="slider"></span>
+              </label>
+            </div>
+
+            <!-- doWeatherCycle -->
+            <div class="rule-row">
+              <div class="rule-info">
+                <span class="rule-name">doWeatherCycle</span>
+                <span class="help-badge" data-tip="Activar ciclo de clima (lluvia, tormenta)">?</span>
+              </div>
+              <label class="switch">
+                <input type="checkbox" id="doWeatherCycle" checked onchange="applyToggle('doWeatherCycle', this)">
+                <span class="slider"></span>
+              </label>
+            </div>
+
+            <!-- doFireTick -->
+            <div class="rule-row">
+              <div class="rule-info">
+                <span class="rule-name">doFireTick</span>
+                <span class="help-badge" data-tip="El fuego se propaga y consume bloques">?</span>
+              </div>
+              <label class="switch">
+                <input type="checkbox" id="doFireTick" checked onchange="applyToggle('doFireTick', this)">
+                <span class="slider"></span>
+              </label>
+            </div>
+
+            <!-- doLeafDecay -->
+            <div class="rule-row">
+              <div class="rule-info">
+                <span class="rule-name">doLeafDecay</span>
+                <span class="help-badge" data-tip="Las hojas se degradan cuando se cortan ï¿½rboles">?</span>
+              </div>
+              <label class="switch">
+                <input type="checkbox" id="doLeafDecay" checked onchange="applyToggle('doLeafDecay', this)">
+                <span class="slider"></span>
+              </label>
+            </div>
+
+            <!-- randomTickSpeed -->
+            <div class="rule-row">
+              <div class="rule-info">
+                <span class="rule-name">randomTickSpeed</span>
+                <span class="help-badge" data-tip="Velocidad aleatoria de ticks (cultivos, hojas). Default: 3">?</span>
+              </div>
+              <div style="display:flex;align-items:center;gap:6px;flex-shrink:0;">
+                <input type="number" class="rule-input" id="randomTickSpeed" value="3" min="0" max="4096">
+                <button class="btn-apply" onclick="applyNumber('randomTickSpeed')">OK</button>
+              </div>
+            </div>
+
+          </div>
+        </div>
+
+        <!-- â”€â”€ DROPS / LOOT â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ -->
+        <div class="gr-card">
+          <div class="gr-card-header">
+            <i class="fa-solid fa-box-open icon-orange"></i>
+            <h3>Drops y Loot</h3>
+          </div>
+          <div class="gr-card-body">
+
+            <!-- doMobLoot -->
+            <div class="rule-row">
+              <div class="rule-info">
+                <span class="rule-name">doMobLoot</span>
+                <span class="help-badge" data-tip="Los mobs sueltan objetos al morir">?</span>
+              </div>
+              <label class="switch">
+                <input type="checkbox" id="doMobLoot" checked onchange="applyToggle('doMobLoot', this)">
+                <span class="slider"></span>
+              </label>
+            </div>
+
+            <!-- doTileDrops -->
+            <div class="rule-row">
+              <div class="rule-info">
+                <span class="rule-name">doTileDrops</span>
+                <span class="help-badge" data-tip="Los bloques sueltan objetos al romperse">?</span>
+              </div>
+              <label class="switch">
+                <input type="checkbox" id="doTileDrops" checked onchange="applyToggle('doTileDrops', this)">
+                <span class="slider"></span>
+              </label>
+            </div>
+
+            <!-- doEntityDrops -->
+            <div class="rule-row">
+              <div class="rule-info">
+                <span class="rule-name">doEntityDrops</span>
+                <span class="help-badge" data-tip="Las entidades sueltan objetos al morir">?</span>
+              </div>
+              <label class="switch">
+                <input type="checkbox" id="doEntityDrops" checked onchange="applyToggle('doEntityDrops', this)">
+                <span class="slider"></span>
+              </label>
+            </div>
+
+          </div>
+        </div>
+
+        <!-- â”€â”€ SPAWNING â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ -->
+        <div class="gr-card">
+          <div class="gr-card-header">
+            <i class="fa-solid fa-dragon icon-cyan"></i>
+            <h3>Spawning de Mobs</h3>
+          </div>
+          <div class="gr-card-body">
+
+            <!-- doMobSpawning -->
+            <div class="rule-row">
+              <div class="rule-info">
+                <span class="rule-name">doMobSpawning</span>
+                <span class="help-badge" data-tip="Apariciï¿½n natural de mobs">?</span>
+              </div>
+              <label class="switch">
+                <input type="checkbox" id="doMobSpawning" checked onchange="applyToggle('doMobSpawning', this)">
+                <span class="slider"></span>
+              </label>
+            </div>
+
+            <!-- doInsomnia -->
+            <div class="rule-row">
+              <div class="rule-info">
+                <span class="rule-name">doInsomnia</span>
+                <span class="help-badge" data-tip="Apariciï¿½n de phantoms si no se duerme">?</span>
+              </div>
+              <label class="switch">
+                <input type="checkbox" id="doInsomnia" checked onchange="applyToggle('doInsomnia', this)">
+                <span class="slider"></span>
+              </label>
+            </div>
+
+            <!-- doPatrolSpawning -->
+            <div class="rule-row">
+              <div class="rule-info">
+                <span class="rule-name">doPatrolSpawning</span>
+                <span class="help-badge" data-tip="Apariciï¿½n de patrullas de pillagers">?</span>
+              </div>
+              <label class="switch">
+                <input type="checkbox" id="doPatrolSpawning" checked onchange="applyToggle('doPatrolSpawning', this)">
+                <span class="slider"></span>
+              </label>
+            </div>
+
+            <!-- doTraderSpawning -->
+            <div class="rule-row">
+              <div class="rule-info">
+                <span class="rule-name">doTraderSpawning</span>
+                <span class="help-badge" data-tip="Apariciï¿½n del comerciante errante">?</span>
+              </div>
+              <label class="switch">
+                <input type="checkbox" id="doTraderSpawning" checked onchange="applyToggle('doTraderSpawning', this)">
+                <span class="slider"></span>
+              </label>
+            </div>
+
+          </div>
+        </div>
+
+        <!-- â”€â”€ COMANDOS / AVANZADO â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ -->
+        <div class="gr-card">
+          <div class="gr-card-header">
+            <i class="fa-solid fa-terminal icon-blue"></i>
+            <h3>Comandos y Avanzado</h3>
+          </div>
+          <div class="gr-card-body">
+
+            <!-- commandBlockOutput -->
+            <div class="rule-row">
+              <div class="rule-info">
+                <span class="rule-name">commandBlockOutput</span>
+                <span class="help-badge" data-tip="Mostrar output de command blocks en el chat de ops">?</span>
+              </div>
+              <label class="switch">
+                <input type="checkbox" id="commandBlockOutput" checked onchange="applyToggle('commandBlockOutput', this)">
+                <span class="slider"></span>
+              </label>
+            </div>
+
+            <!-- logAdminCommands -->
+            <div class="rule-row">
+              <div class="rule-info">
+                <span class="rule-name">logAdminCommands</span>
+                <span class="help-badge" data-tip="Registrar comandos de administrador en el log del servidor">?</span>
+              </div>
+              <label class="switch">
+                <input type="checkbox" id="logAdminCommands" checked onchange="applyToggle('logAdminCommands', this)">
+                <span class="slider"></span>
+              </label>
+            </div>
+
+            <!-- sendCommandFeedback -->
+            <div class="rule-row">
+              <div class="rule-info">
+                <span class="rule-name">sendCommandFeedback</span>
+                <span class="help-badge" data-tip="Mostrar feedback de comandos en el chat">?</span>
+              </div>
+              <label class="switch">
+                <input type="checkbox" id="sendCommandFeedback" checked onchange="applyToggle('sendCommandFeedback', this)">
+                <span class="slider"></span>
+              </label>
+            </div>
+
+            <!-- reducedDebugInfo -->
+            <div class="rule-row">
+              <div class="rule-info">
+                <span class="rule-name">reducedDebugInfo</span>
+                <span class="help-badge" data-tip="Reducir la info de debug (F3) que ven los jugadores">?</span>
+              </div>
+              <label class="switch">
+                <input type="checkbox" id="reducedDebugInfo" onchange="applyToggle('reducedDebugInfo', this)">
+                <span class="slider"></span>
+              </label>
+            </div>
+
+            <!-- maxEntityCramming -->
+            <div class="rule-row">
+              <div class="rule-info">
+                <span class="rule-name">maxEntityCramming</span>
+                <span class="help-badge" data-tip="Mï¿½ximo de entidades en el mismo bloque antes de hacer daï¿½o. Default: 24">?</span>
+              </div>
+              <div style="display:flex;align-items:center;gap:6px;flex-shrink:0;">
+                <input type="number" class="rule-input" id="maxEntityCramming" value="24" min="0" max="1000">
+                <button class="btn-apply" onclick="applyNumber('maxEntityCramming')">OK</button>
+              </div>
+            </div>
+
+            <!-- spawnRadius -->
+            <div class="rule-row">
+              <div class="rule-info">
+                <span class="rule-name">spawnRadius</span>
+                <span class="help-badge" data-tip="Radio del punto de spawn inicial. Default: 10">?</span>
+              </div>
+              <div style="display:flex;align-items:center;gap:6px;flex-shrink:0;">
+                <input type="number" class="rule-input" id="spawnRadius" value="10" min="0" max="999">
+                <button class="btn-apply" onclick="applyNumber('spawnRadius')">OK</button>
+              </div>
+            </div>
+
+          </div>
+        </div>
+
+      </div><!-- /gr-grid -->
+    </main>
+  </div>
+
+  <!-- Toast -->
+  <div id="grToast"></div>
+<script src="js/global-controls.js"></script>
+  <script>
+    function formatReadableRuleName(name) {
+      return name.replace(/([a-z])([A-Z])/g, '$1 $2');
+    }
+
+    document.querySelectorAll('.rule-name').forEach((el) => {
+      const technicalName = (el.textContent || '').trim();
+      if (!technicalName) return;
+
+      el.textContent = formatReadableRuleName(technicalName);
+
+      const technical = document.createElement('span');
+      technical.className = 'rule-technical';
+      technical.textContent = technicalName;
+      el.insertAdjacentElement('afterend', technical);
+    });
+  </script>
+  <script src="js/gamerules.js"></script>
+</body>
+</html>

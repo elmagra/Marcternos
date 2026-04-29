@@ -1,0 +1,133 @@
+@import url('https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap');
+
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+html { scroll-behavior: smooth; }
+
+body {
+  font-family: 'Outfit', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  background-color: #020617;
+  background-image: 
+    radial-gradient(at 0% 0%, rgba(59, 130, 246, 0.08) 0px, transparent 50%),
+    radial-gradient(at 100% 100%, rgba(34, 197, 94, 0.04) 0px, transparent 50%);
+  background-attachment: fixed;
+  color: #f8fafc;
+  min-height: 100vh;
+  overflow-x: hidden;
+}
+
+.main-content,
+.sidebar {
+  transition: opacity 0.24s ease, transform 0.24s ease, filter 0.24s ease;
+}
+
+html.page-boot-loading body {
+  overflow: hidden;
+}
+
+html.page-boot-loading .main-content {
+  opacity: 0;
+  transform: translateY(8px);
+}
+
+html.page-boot-loading .sidebar {
+  opacity: 0.6;
+  filter: saturate(0.8);
+}
+
+#pageBootOverlay {
+  position: fixed;
+  inset: 0;
+  z-index: 99999;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background:
+    radial-gradient(at 20% 20%, rgba(59, 130, 246, 0.14) 0px, transparent 45%),
+    radial-gradient(at 80% 80%, rgba(16, 185, 129, 0.08) 0px, transparent 45%),
+    rgba(2, 6, 23, 0.92);
+  backdrop-filter: blur(6px);
+  opacity: 1;
+  transition: opacity 0.22s ease;
+}
+
+#pageBootOverlay.hide {
+  opacity: 0;
+  pointer-events: none;
+}
+
+.page-boot-center {
+  display: inline-flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 16px;
+  border-radius: 12px;
+  border: 1px solid rgba(148, 163, 184, 0.35);
+  background: rgba(15, 23, 42, 0.72);
+  color: #dbeafe;
+}
+
+.page-boot-spinner {
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  border: 2px solid rgba(148, 163, 184, 0.35);
+  border-top-color: #60a5fa;
+  animation: pageBootSpin 0.8s linear infinite;
+}
+
+.page-boot-text {
+  font-size: 13px;
+  font-weight: 600;
+  letter-spacing: 0.01em;
+}
+
+@keyframes pageBootSpin {
+  to { transform: rotate(360deg); }
+}
+
+a {
+  text-decoration: none;
+  color: inherit;
+}
+
+.back-link {
+  color: #3b82f6;
+  font-weight: 600;
+  transition: 0.2s;
+}
+
+.back-link:hover {
+  opacity: 0.8;
+}
+
+.small-text {
+  color: #94a3b8;
+  font-size: 14px;
+}
+
+.mt-12 {
+  margin-top: 12px;
+}
+
+.mt-20 {
+  margin-top: 20px;
+}
+
+.sidebar-logo-img {
+  max-width: 100%;
+  height: auto;
+  margin-bottom: 40px;
+  display: block;
+}
+
+/* Premium Globals */
+:root {
+  --p-card: rgba(15, 23, 42, 0.6);
+  --p-border: rgba(255, 255, 255, 0.08);
+  --p-blur: blur(16px);
+}

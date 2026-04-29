@@ -1,0 +1,75 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>MC Host - Jugadores</title>
+  <link rel="icon" type="image/png" href="resources/icono.png">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" />
+  <link rel="stylesheet" href="css/base.css" />
+  <link rel="stylesheet" href="css/layout.css" />
+  <link rel="stylesheet" href="css/components.css" />
+  <link rel="stylesheet" href="css/players.css" />
+  <link rel="stylesheet" href="css/player-detail.css" />
+  <link rel="stylesheet" href="css/modals.css" />
+  <link rel="stylesheet" href="css/responsive.css" />
+</head>
+<body>
+  <div class="layout">
+    <aside class="sidebar">
+      <img src="resources/marcternos_logo.png" alt="MARCTERNOS" class="sidebar-logo-img">
+      <a class="back-to-instances" href="instances.html"><i class="fa-solid fa-arrow-left"></i> Volver a instancias</a>
+      <nav>
+        <a class="nav-link" href="index.html"><i class="fa-solid fa-gauge-high"></i> Dashboard</a>
+        <a class="nav-link active" href="players.html"><i class="fa-solid fa-users"></i> Jugadores</a>
+        <a class="nav-link" href="files.html"><i class="fa-solid fa-folder-open"></i> Archivos</a>
+        <a class="nav-link" href="backups.html"><i class="fa-solid fa-box-archive"></i> Backups</a>
+        <a class="nav-link" href="properties.html"><i class="fa-solid fa-sliders"></i> Propiedades</a>
+        <a class="nav-link" href="gamerules.html"><i class="fa-solid fa-scroll"></i> Gamerules</a>
+        <a class="nav-link" href="addons.html"><i class="fa-solid fa-puzzle-piece"></i> Plugins & Mods</a>
+      </nav>
+    </aside>
+
+    <main class="main-content">
+      <header class="topbar">
+        <div>
+          <h2>Jugadores</h2>
+          <p>Pulsa cualquier parte de la tarjeta para abrir el jugador.</p>
+        </div>
+        <div class="topbar-controls" style="background: rgba(15, 23, 42, 0.4); border: 1px solid rgba(255,255,255,0.05); padding: 10px 20px; border-radius: 20px;">
+          <div class="topbar-status">
+            <div class="status-dot dot-offline" id="globalStatusDot" style="width: 12px; height: 12px;"></div>
+            <span class="topbar-status-text" id="globalStatusText" style="text-transform: uppercase; letter-spacing: 0.05em; font-size: 0.75rem; font-weight: 800;">Apagado</span>
+          </div>
+          <div class="topbar-actions" style="margin-left: 10px;">
+            <button class="btn success" id="globalStartBtn" style="padding: 10px 18px; border-radius: 14px; box-shadow: 0 4px 15px -5px rgba(34, 197, 94, 0.4);"><i class="fa-solid fa-play"></i> INICIAR</button>
+            <button class="btn secondary" id="globalRestartBtn" style="padding: 10px 18px; border-radius: 14px;"><i class="fa-solid fa-rotate"></i></button>
+            <button class="btn danger" id="globalStopBtn" style="padding: 10px 18px; border-radius: 14px; box-shadow: 0 4px 15px -5px rgba(239, 68, 68, 0.4);"><i class="fa-solid fa-stop"></i></button>
+          </div>
+        </div>
+      </header>
+
+      <section class="card">
+        <div class="card-header-row">
+          <h3>Lista de jugadores</h3>
+          <button id="refreshPlayersBtn" class="btn secondary">Actualizar</button>
+        </div>
+
+        <div class="players-filters-row">
+          <button id="showAllPlayersBtn" class="btn secondary filter-active">Todos</button>
+          <button id="showWhitelistBtn" class="btn primary">Whitelist</button>
+          <button id="showBanIpBtn" class="btn danger">Ban IP</button>
+          <button id="showBanUuidBtn" class="btn danger">Ban UUID</button>
+        </div>
+
+        <div id="playersGrid" class="players-card-grid"></div>
+      </section>
+    </main>
+  </div>
+
+  <script src="js/data.js"></script>
+<script src="js/global-controls.js"></script>
+  <script src="js/players.js"></script>
+</body>
+</html>

@@ -1,0 +1,240 @@
+/* ─── Settings page layout ──────────────────────────────────── */
+.settings-sections {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+  gap: 14px;
+  padding-bottom: 40px;
+  margin-top: 25px;
+}
+
+/* ─── Individual section card ──────────────────────────────── */
+.settings-card {
+  background: #111827;
+  border: 1px solid #1f2937;
+  border-radius: 14px;
+  /* NO overflow:hidden — lets tooltips escape the card */
+  display: flex;
+  flex-direction: column;
+  transition: border-color 0.2s ease, box-shadow 0.2s ease;
+}
+
+.settings-card:hover {
+  border-color: #2563eb44;
+  box-shadow: 0 4px 20px rgba(37, 99, 235, 0.08);
+}
+
+/* ─── Card header ───────────────────────────────────────────── */
+.settings-card-header {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 12px 16px 10px;
+  border-bottom: 1px solid #1f2937;
+  background: #0f172a;
+  border-radius: 14px 14px 0 0;
+}
+
+.settings-card-header h3 {
+  margin: 0;
+  font-size: 13px;
+  font-weight: 600;
+  color: #e2e8f0;
+  letter-spacing: 0.02em;
+}
+
+.settings-card-icon {
+  font-size: 16px;
+  line-height: 1;
+  flex-shrink: 0;
+}
+
+/* ─── Fields container ──────────────────────────────────────── */
+.settings-fields {
+  padding: 10px 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  flex: 1;
+}
+
+/* ─── Label row (label + help badge side by side) ───────────── */
+.field-label-row {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  margin-bottom: 3px;
+}
+
+.field-label-row label,
+.field-label-row .toggle-label {
+  font-size: 11px;
+  font-weight: 600;
+  color: #64748b;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  margin: 0;
+}
+
+/* ─── Text / number / select rows ──────────────────────────── */
+.field-row {
+  display: flex;
+  flex-direction: column;
+}
+
+.field-row input,
+.field-row select {
+  width: 100%;
+  padding: 7px 10px;
+  border-radius: 8px;
+  border: 1px solid #1e293b;
+  background: #0f172a;
+  color: #e2e8f0;
+  font-size: 13px;
+  transition: border-color 0.15s ease, box-shadow 0.15s ease;
+}
+
+.field-row input:focus,
+.field-row select:focus {
+  outline: none;
+  border-color: #2563eb;
+  box-shadow: 0 0 0 2px rgba(37, 99, 235, 0.15);
+}
+
+/* ─── Toggle rows ───────────────────────────────────────────── */
+.toggle-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 7px 10px;
+  background: #0f172a;
+  border: 1px solid #1e293b;
+  border-radius: 8px;
+  transition: background 0.15s ease;
+}
+
+.toggle-row:hover {
+  background: #0d1526;
+}
+
+/* ─── Toggle switch ─────────────────────────────────────────── */
+.switch {
+  position: relative;
+  display: inline-block;
+  width: 36px;
+  height: 20px;
+  flex-shrink: 0;
+  margin: 0;
+}
+
+.switch input {
+  opacity: 0;
+  width: 0;
+  height: 0;
+}
+
+.slider {
+  position: absolute;
+  inset: 0;
+  background-color: #1e293b;
+  border-radius: 999px;
+  cursor: pointer;
+  transition: background 0.2s ease;
+}
+
+.slider::before {
+  content: "";
+  position: absolute;
+  height: 14px;
+  width: 14px;
+  left: 3px;
+  top: 50%;
+  transform: translateY(-50%);
+  background: #64748b;
+  border-radius: 50%;
+  transition: transform 0.2s ease, background 0.2s ease;
+}
+
+.switch input:checked + .slider {
+  background-color: rgba(71, 110, 184, 0.25); /* Azul/acero menos saturado */
+}
+
+.switch input:checked + .slider::before {
+  transform: translate(16px, -50%);
+  background: #5a8bd0; /* Azul acero desaturado */
+}
+
+/* ─── Help badge (tooltip) ──────────────────────────────────── */
+.help-badge {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  background: #1e293b;
+  border: 1px solid #64748b;
+  color: #94a3b8;
+  font-size: 9px;
+  font-weight: 700;
+  cursor: help;
+  flex-shrink: 0;
+  transition: background 0.15s ease, color 0.15s ease, border-color 0.15s ease;
+  user-select: none;
+}
+
+.help-badge:hover {
+  background: #2563eb;
+  border-color: #3b82f6;
+  color: #fff;
+}
+
+/* Tooltip bubble — fixed position via JS fallback using CSS only:
+   use position:fixed on the pseudo-element to escape any overflow */
+.help-badge::after {
+  content: attr(data-tip);
+  position: fixed;
+  /* The pseudo-element can't use JS coords, so we keep absolute
+     but lift z-index high and ensure no ancestor clips it */
+  position: absolute;
+  bottom: calc(100% + 8px);
+  left: 50%;
+  transform: translateX(-50%);
+  background: #1e3058;
+  border: 1.5px solid #93c5fd;
+  color: #f1f5f9;
+  font-size: 11px;
+  font-weight: 400;
+  line-height: 1.5;
+  text-transform: none;
+  letter-spacing: 0;
+  padding: 7px 11px;
+  border-radius: 9px;
+  white-space: normal;
+  width: 200px;
+  box-shadow: 0 8px 24px rgba(0,0,0,0.6);
+  pointer-events: none;
+  opacity: 0;
+  transition: opacity 0.15s ease;
+  z-index: 9999;
+}
+
+/* Arrow below bubble */
+.help-badge::before {
+  content: "";
+  position: absolute;
+  bottom: calc(100% + 3px);
+  left: 50%;
+  transform: translateX(-50%);
+  border: 5px solid transparent;
+  border-top-color: #93c5fd;
+  pointer-events: none;
+  opacity: 0;
+  transition: opacity 0.15s ease;
+  z-index: 9999;
+}
+
+.help-badge:hover::after,
+.help-badge:hover::before {
+  opacity: 1;
+}
