@@ -1,5 +1,5 @@
 {
-  "activeInstanceId": "default",
+  "activeInstanceId": "world-km78cg-oplrqe",
   "instances": [
     {
       "id": "default",
@@ -8,8 +8,18 @@
       "software": "Vanilla",
       "version": "...",
       "status": "offline",
-      "createdAt": "2026-04-29T21:45:15.344Z",
-      "updatedAt": "2026-04-29T21:45:15.344Z"
+      "createdAt": "2026-04-29T22:18:11.315Z",
+      "updatedAt": "2026-04-29T22:18:11.315Z"
+    },
+    {
+      "id": "world-km78cg-oplrqe",
+      "name": "world-km78cg",
+      "path": "C:\\Users\\mmyzx\\Documents\\GitHub\\Marcternos\\data\\servers\\world-km78cg",
+      "software": "Vanilla",
+      "version": "...",
+      "status": "offline",
+      "createdAt": "2026-04-29T22:18:11.315Z",
+      "updatedAt": "2026-04-29T22:18:11.315Z"
     }
   ]
 }

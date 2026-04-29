@@ -1,8 +1,11 @@
-﻿function el(id) { return document.getElementById(id); }
+function el(id) { return document.getElementById(id); }
 let lastInstancesHash = '';
 let cachedInstances = [];
 let armedDeleteId = null;
 let armedDeleteTimer = null;
+
+// Mapa para mantener el tiempo de inicio de cada instancia activa
+const instanceUptimeStarts = {};
 
 function buildInstanceIconUrl(instanceId, iconRev = 0) {
   return `/api/server/icon?instanceId=${encodeURIComponent(instanceId)}&rev=${encodeURIComponent(iconRev || 0)}`;
@@ -11,11 +14,11 @@ function buildInstanceIconUrl(instanceId, iconRev = 0) {
 function formatSoftwareVersion(instance) {
   const software = String(instance.software || 'Vanilla').trim() || 'Vanilla';
   const version = String(instance.version || '').trim();
-  return version ? `${software} · ${version}` : `${software} · versión sin detectar`;
+  return version ? `${software} · ${version}` : `${software}`;
 }
 
 function formatUptime(ms) {
-  if (!ms || ms < 0) return '00:00:00';
+  if (!ms || ms <= 0) return '00:00:00';
   const totalSeconds = Math.floor(ms / 1000);
   const h = Math.floor(totalSeconds / 3600);
   const m = Math.floor((totalSeconds % 3600) / 60);
@@ -32,14 +35,25 @@ async function selectInstance(instanceId) {
   }).catch(() => {});
 }
 
-async function doAction(instanceId, endpoint) {
+async function doAction(ev, instanceId, endpoint) {
+  ev.stopPropagation();
+  const btn = ev.currentTarget;
+  const oldText = btn.innerHTML;
+  btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i>';
+  btn.disabled = true;
+  
   await selectInstance(instanceId);
   await fetch(endpoint, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ instanceId })
   }).catch(() => {});
-  setTimeout(loadInstances, 700);
+  
+  setTimeout(() => {
+    btn.innerHTML = oldText;
+    btn.disabled = false;
+    loadInstances();
+  }, 1000);
 }
 
 async function openWorldPanel(instanceId) {
@@ -55,59 +69,93 @@ async function deleteInstance(instanceId) {
   }
   const current = localStorage.getItem('activeInstanceId');
   if (current === instanceId) localStorage.removeItem('activeInstanceId');
+  lastInstancesHash = ''; // Forzar recarga
   loadInstances();
   renderDeleteWorldsList();
 }
 
-function getStatusClass(status) {
-  if (status === 'online') return 'online';
-  if (status === 'starting') return 'starting';
-  return 'offline';
+function getStatusInfo(status) {
+  if (status === 'online') return { class: 'online', text: 'En línea', icon: 'fa-check-circle', color: '#22c55e' };
+  if (status === 'starting') return { class: 'starting', text: 'Iniciando', icon: 'fa-spinner fa-spin', color: '#eab308' };
+  return { class: 'offline', text: 'Apagado', icon: 'fa-power-off', color: '#ef4444' };
 }
 
 function renderInstanceCard(instance, activeId) {
   const card = document.createElement('div');
-  const statusClass = getStatusClass(instance.status);
-  const onlineCard = statusClass === 'online' || statusClass === 'starting';
-  card.className = `instance-card ${onlineCard ? 'online' : 'offline'}${instance.id === activeId ? ' active' : ''}`;
+  const sInfo = getStatusInfo(instance.status);
+  const isOnline = instance.status === 'online';
+  
+  card.className = `instance-card ${sInfo.class} ${instance.id === activeId ? 'active' : ''}`;
   card.onclick = () => openWorldPanel(instance.id);
+  card.dataset.id = instance.id;
 
+  const maxPlayers = instance.maxPlayers || 20;
+  const playersOnline = instance.playersOnline || 0;
+  
   card.innerHTML = `
     <div class="instance-header">
-      <img class="instance-icon" data-instance-id="${instance.id}" src="${buildInstanceIconUrl(instance.id, instance.iconRev || 0)}" alt="icono" onerror="this.src='resources/icono.png'" />
+      <div class="instance-icon-wrap">
+        <img class="instance-icon" data-instance-id="${instance.id}" src="${buildInstanceIconUrl(instance.id, instance.iconRev || 0)}" alt="icono" onerror="this.src='resources/icono.png'" />
+        ${instance.id === activeId ? '<div class="active-badge"><i class="fa-solid fa-star"></i></div>' : ''}
+      </div>
       <div class="instance-title-wrap">
         <h4 class="instance-title">${instance.name}</h4>
-        <p class="instance-version">${formatSoftwareVersion(instance)}</p>
-      </div>
-      <div class="instance-status">
-        <span class="status-dot-small ${statusClass}"></span>
-        <span>${instance.status || 'offline'}</span>
+        <span class="status-badge" style="color: ${sInfo.color}; background: ${sInfo.color}15; border: 1px solid ${sInfo.color}30;">
+          <i class="fa-solid ${sInfo.icon}"></i> ${sInfo.text}
+        </span>
       </div>
     </div>
 
     <div class="instance-stats">
       <div class="stat-pill">
-        <div class="stat-label">Jugando ahora</div>
-        <div class="stat-value">${instance.playersOnline || 0}</div>
+        <div class="stat-icon"><i class="fa-solid fa-clock"></i></div>
+        <div class="stat-info">
+          <div class="stat-label">Tiempo abierto</div>
+          <div class="stat-value uptime-value" data-id="${instance.id}">${isOnline ? formatUptime(instance.uptimeMs || 0) : '00:00:00'}</div>
+        </div>
       </div>
+      
       <div class="stat-pill">
-        <div class="stat-label">Tiempo abierto</div>
-        <div class="stat-value">${formatUptime(instance.uptimeMs || 0)}</div>
+        <div class="stat-icon"><i class="fa-solid fa-users"></i></div>
+        <div class="stat-info">
+          <div class="stat-label">Jugadores</div>
+          <div class="stat-value">${isOnline ? playersOnline + ' / ' + maxPlayers : '0 / ?'}</div>
+        </div>
+      </div>
+
+      <div class="stat-pill">
+        <div class="stat-icon"><i class="fa-solid fa-cube"></i></div>
+        <div class="stat-info">
+          <div class="stat-label">Versión</div>
+          <div class="stat-value">${instance.version && instance.version !== '...' ? instance.version : 'Desconocida'}</div>
+        </div>
+      </div>
+
+      <div class="stat-pill">
+        <div class="stat-icon"><i class="fa-solid fa-microchip"></i></div>
+        <div class="stat-info">
+          <div class="stat-label">Software</div>
+          <div class="stat-value">${instance.software || 'Vanilla'}</div>
+        </div>
       </div>
     </div>
 
     <div class="instance-actions">
-      <button class="btn danger" data-action="stop">Stop</button>
+      <button class="action-btn primary" title="Abrir Panel" onclick="event.stopPropagation(); openWorldPanel('${instance.id}')">
+        <i class="fa-solid fa-gauge-high"></i> Abrir Panel
+      </button>
+      ${instance.status === 'offline' 
+        ? `<button class="action-btn success" title="Iniciar" onclick="doAction(event, '${instance.id}', '/api/server/start')"><i class="fa-solid fa-play"></i></button>`
+        : `<button class="action-btn danger" title="Detener" onclick="doAction(event, '${instance.id}', '/api/server/stop')"><i class="fa-solid fa-stop"></i></button>
+           <button class="action-btn warning" title="Reiniciar" onclick="doAction(event, '${instance.id}', '/api/server/restart')"><i class="fa-solid fa-rotate-right"></i></button>`
+      }
     </div>
   `;
 
-  card.querySelector('[data-action="stop"]').onclick = (ev) => {
-    ev.stopPropagation();
-    doAction(instance.id, '/api/server/stop');
-  };
-
   return card;
 }
+
+// ─── Modal de Borrado ───────────────────────────────────────────────────────
 
 function openDeleteWorldsModal() {
   const modal = el('deleteWorldsModal');
@@ -163,17 +211,19 @@ function renderDeleteWorldsList() {
   });
 }
 
+// ─── Carga y Refresco ───────────────────────────────────────────────────────
+
 async function loadInstances() {
   const grid = el('instancesGrid');
   if (!grid) return;
 
   if (!grid.dataset.loaded) {
-    grid.innerHTML = '<div class="small-text">Cargando...</div>';
+    grid.innerHTML = '<div class="small-text">Cargando instancias...</div>';
   }
   const instRes = await fetch('/api/instances').catch(() => null);
 
   if (!instRes || !instRes.ok) {
-    grid.innerHTML = '<div class="small-text">No se pudieron cargar las instancias.</div>';
+    grid.innerHTML = '<div class="small-text" style="color: #ef4444;">Error al cargar las instancias. Inténtalo de nuevo.</div>';
     return;
   }
 
@@ -181,29 +231,61 @@ async function loadInstances() {
   const instances = instData.instances || [];
   cachedInstances = instances.slice();
   const activeId = localStorage.getItem('activeInstanceId') || instData.activeInstanceId || null;
+  
   const hash = JSON.stringify({
     activeId,
     instances: instances.map(i => ({
       id: i.id,
       status: i.status,
       playersOnline: i.playersOnline,
+      maxPlayers: i.maxPlayers,
       version: i.version,
       software: i.software,
       iconRev: i.iconRev || 0
     }))
   });
 
-  if (hash === lastInstancesHash) return;
+  // Guardar los tiempos base para el contador local de uptime
+  instances.forEach(inst => {
+    if (inst.status === 'online') {
+      if (!instanceUptimeStarts[inst.id]) {
+        instanceUptimeStarts[inst.id] = Date.now() - (inst.uptimeMs || 0);
+      }
+    } else {
+      delete instanceUptimeStarts[inst.id];
+    }
+  });
+
+  if (hash === lastInstancesHash) return; // No hay cambios visuales fuertes
   lastInstancesHash = hash;
 
   grid.innerHTML = '';
   grid.dataset.loaded = '1';
   if (instances.length === 0) {
-    grid.innerHTML = '<div class="small-text">No hay instancias. Crea la primera con "Nueva instancia".</div>';
+    grid.innerHTML = `
+      <div class="empty-instances">
+        <i class="fa-solid fa-server empty-icon"></i>
+        <h3>No tienes ninguna instancia</h3>
+        <p>Crea tu primer mundo de Minecraft para empezar a jugar.</p>
+        <a class="btn primary mt-3" href="create-world.html"><i class="fa-solid fa-plus"></i> Crear mundo</a>
+      </div>
+    `;
     return;
   }
 
   instances.forEach(i => grid.appendChild(renderInstanceCard(i, activeId)));
+}
+
+// ─── Contador local de Uptime ────────────────────────────────────────────────
+
+function tickUptimes() {
+  Object.keys(instanceUptimeStarts).forEach(id => {
+    const el = document.querySelector(`.uptime-value[data-id="${id}"]`);
+    if (el) {
+      const elapsed = Date.now() - instanceUptimeStarts[id];
+      el.textContent = formatUptime(elapsed);
+    }
+  });
 }
 
 document.addEventListener('DOMContentLoaded', () => {
@@ -219,6 +301,8 @@ document.addEventListener('DOMContentLoaded', () => {
       if (ev.target === modal) closeDeleteWorldsModal();
     };
   }
+  
   loadInstances();
   setInterval(loadInstances, 3000);
+  setInterval(tickUptimes, 1000); // Actualiza el timer cada segundo suavemente
 });
