@@ -1,39 +1,88 @@
 const axios = require('axios');
 
-async function getJarUrl(type, ver) {
-    if (type.toLowerCase().includes('paper')) {
-        try {
-            const buildData = await axios.get(`https://api.papermc.io/v2/projects/paper/versions/${ver}/builds`);
-            const latestBuild = buildData.data.builds[buildData.data.builds.length - 1];
-            const filename = latestBuild.downloads.application.name;
-            return `https://api.papermc.io/v2/projects/paper/versions/${ver}/builds/${latestBuild.build}/downloads/${filename}`;
-        } catch (e) {
-            console.error("Error fetching PaperMC build:", e.message);
-        }
-    }
+const MANIFEST_URL = 'https://piston-meta.mojang.com/mc/game/version_manifest_v2.json';
+const MANIFEST_TTL_MS = 60 * 60 * 1000;
 
-    // Fabric Installer (Optimized)
-    if (type.toLowerCase().includes('fabric')) {
-        // Usamos una URL directa al instalador o cargador estable para la versión
-        return `https://meta.fabricmc.net/v2/versions/loader/${ver}/0.19.2/1.0.1/server/jar`;
+let manifestCache = { data: null, fetchedAt: 0 };
+
+async function getVersionManifest() {
+    const now = Date.now();
+    if (manifestCache.data && now - manifestCache.fetchedAt < MANIFEST_TTL_MS) {
+        return manifestCache.data;
     }
-    
-    // Official Mojang Vanilla mappings
-    const vanillaMapping = {
-        '1.21.1': 'https://piston-data.mojang.com/v1/objects/59353fb40c36d304f2035d51e7d6e6baa98dc05c/server.jar',
-        '1.21': 'https://piston-data.mojang.com/v1/objects/cf35b909f2efa5ea5a64804e4823a7541a97a18a/server.jar',
-        '1.20.6': 'https://piston-data.mojang.com/v1/objects/145ff0858209bcfc164859ba735d4199aafa1eea/server.jar',
-        '1.20.4': 'https://piston-data.mojang.com/v1/objects/5eca988f7f81276d741cbd50f39b65193c4451a1/server.jar',
-        '1.20.1': 'https://piston-data.mojang.com/v1/objects/84194a2f286ef7c14ed7ce0090dba59902951553/server.jar',
-        '1.19.4': 'https://piston-data.mojang.com/v1/objects/fcebdddaa0fc8c62d5ce2087adde9ed844f7d7d6/server.jar',
-        '1.16.5': 'https://piston-data.mojang.com/v1/objects/fba9f7833e858a1257d810d21a3a9e3c967f9077/server.jar',
-        '1.12.2': 'https://launcher.mojang.com/v1/objects/88624534f36da7496c1482813589999a8449e755/server.jar'
-    };
-    
-    if (vanillaMapping[ver]) return vanillaMapping[ver];
+    const res = await axios.get(MANIFEST_URL, { timeout: 15000 });
+    manifestCache = { data: res.data, fetchedAt: now };
+    return res.data;
+}
+
+async function getVanillaJarUrl(ver) {
+    const manifest = await getVersionManifest();
+    const entry = (manifest.versions || []).find(v => v.id === ver);
+    if (!entry) return null;
+
+    const versionRes = await axios.get(entry.url, { timeout: 15000 });
+    return versionRes.data?.downloads?.server?.url || null;
+}
+
+async function getPaperJarUrl(ver) {
+    const headers = { 'User-Agent': 'panel-minecraft/1.0 (admin@localhost)' };
+    const buildData = await axios.get(
+        `https://api.papermc.io/v2/projects/paper/versions/${ver}/builds`,
+        { timeout: 15000, headers }
+    );
+    const builds = buildData.data.builds || [];
+    if (builds.length === 0) return null;
+
+    const latestBuild = builds[builds.length - 1];
+    const filename = latestBuild.downloads.application.name;
+    return `https://api.papermc.io/v2/projects/paper/versions/${ver}/builds/${latestBuild.build}/downloads/${filename}`;
+}
+
+async function getFabricJarUrl(ver) {
+    const [loadersRes, installersRes] = await Promise.all([
+        axios.get('https://meta.fabricmc.net/v2/versions/loader', { timeout: 15000 }),
+        axios.get('https://meta.fabricmc.net/v2/versions/installer', { timeout: 15000 })
+    ]);
+
+    const loader = (loadersRes.data || []).find(v => v.stable)?.version;
+    const installer = (installersRes.data || []).find(v => v.stable)?.version;
+    if (!loader || !installer) return null;
+
+    return `https://meta.fabricmc.net/v2/versions/loader/${ver}/${loader}/${installer}/server/jar`;
+}
+
+async function getForgeJarUrl(ver) {
+    const promosRes = await axios.get(
+        'https://files.minecraftforge.net/net/minecraftforge/forge/promotions_slim.json',
+        { timeout: 15000 }
+    );
+    const promos = promosRes.data?.promos || {};
+    const forgeVer = promos[`${ver}-recommended`] || promos[`${ver}-latest`];
+    if (!forgeVer) return null;
+
+    return `https://maven.minecraftforge.net/net/minecraftforge/forge/${ver}-${forgeVer}/forge-${ver}-${forgeVer}-installer.jar`;
+}
+
+async function getJarUrl(type, ver) {
+    const software = String(type || 'Vanilla').toLowerCase();
+
+    try {
+        if (software.includes('paper')) {
+            return await getPaperJarUrl(ver);
+        }
+        if (software.includes('fabric')) {
+            return await getFabricJarUrl(ver);
+        }
+        if (software.includes('forge')) {
+            return await getForgeJarUrl(ver);
+        }
+        return await getVanillaJarUrl(ver);
+    } catch (e) {
+        console.error(`[JAR] Error resolving URL for ${type} ${ver}:`, e.message);
+        return null;
+    }
 }
 
 module.exports = {
     getJarUrl
 };
-

@@ -1,27 +1,29 @@
-Panel-Minecraft-Final-Release.zip
-dist/panel-minecraft.tar
-*.zip
-*.tar
+# Dependencies
 node_modules/
+
+# Environment
 .env
-Panel-Minecraft-Final-Release.zip
-dist/panel-minecraft.tar
-*.zip
-*.tar
-node_modules/
-.env
+
+# Build artifacts
 dist/
-Panel-Minecraft-Final-Release.zip
-dist/panel-minecraft.tar
 *.zip
 *.tar
-node_modules/
-.env
-dist/
 Panel-Minecraft-Final-Release.zip
 dist/panel-minecraft.tar
-*.zip
-*.tar
-node_modules/
-.env
-dist/
+
+# Runtime data (worlds, backups, registry) - mounted via Docker volume
+data/*
+!data/.gitkeep
+
+# IDE / OS
+.cursor/
+.vscode/
+*.log
+npm-debug.log
+
+# Local scripts
+install.sh
+*.bat
+resolve_conflicts.py
+_test_*.py
+fix_encoding.py

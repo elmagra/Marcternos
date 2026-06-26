@@ -1,4 +1,4 @@
-﻿# Implementation Plan - Panel Multi-Instancia + Versiones Dinamicas + Endpoint Publico (Docker/Tailscale)
+# Implementation Plan - Panel Multi-Instancia + Versiones Dinamicas + Endpoint Publico (Docker/Tailscale)
 
 ## Objetivo
 Construir un panel "padre" que gestione multiples instancias (mundos/servidores), con catalogo de versiones actualizado automaticamente y deteccion correcta del endpoint publico cuando se ejecuta en Docker con Tailscale.

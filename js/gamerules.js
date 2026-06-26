@@ -1,8 +1,8 @@
-﻿/* â”€â”€ Gamerules page logic â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
+/* ── Gamerules page logic ─────────────────────────────── */
 
 let serverOnline = false;
 
-// â”€â”€ Toast helper â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// ── Toast helper ─────────────────────────────────────────
 function showToast(msg, type = 'ok') {
   const t = document.getElementById('grToast');
   t.textContent = msg;
@@ -11,7 +11,7 @@ function showToast(msg, type = 'ok') {
   t._timer = setTimeout(() => { t.className = ''; }, 3000);
 }
 
-// â”€â”€ Send a gamerule command to the server â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// ── Send a gamerule command to the server ────────────────
 async function applyGamerule(rule, value) {
   try {
     const res = await fetch('/api/server/command', {
@@ -20,15 +20,15 @@ async function applyGamerule(rule, value) {
       body: JSON.stringify({ command: `gamerule ${rule} ${value}` })
     });
     if (!res.ok) throw new Error((await res.json()).error || res.status);
-    showToast(`âœ… ${rule} â†’ ${value}`, 'ok');
+    showToast(`✅ ${rule} → ${value}`, 'ok');
     return true;
   } catch (e) {
-    showToast(`âŒ Error: ${e.message}`, 'err');
+    showToast(`❌ Error: ${e.message}`, 'err');
     return false;
   }
 }
 
-// â”€â”€ Toggle (boolean gamerules) â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// ── Toggle (boolean gamerules) ───────────────────────────
 async function applyToggle(rule, checkbox) {
   const value = checkbox.checked ? 'true' : 'false';
   const ok = await applyGamerule(rule, value);
@@ -38,7 +38,7 @@ async function applyToggle(rule, checkbox) {
   }
 }
 
-// â”€â”€ Number/select gamerules â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// ── Number/select gamerules ──────────────────────────────
 async function applyNumber(rule) {
   const input = document.getElementById(rule);
   if (!input) return;
@@ -58,7 +58,7 @@ async function applyNumber(rule) {
   btn.disabled = true;
 
   const ok = await applyGamerule(rule, value);
-  btn.textContent = ok ? 'âœ“' : 'âœ—';
+  btn.textContent = ok ? '✓' : '✗';
   btn.classList.toggle('ok', ok);
   btn.classList.toggle('err', !ok);
   setTimeout(() => {
@@ -68,7 +68,7 @@ async function applyNumber(rule) {
   }, 2000);
 }
 
-// â”€â”€ Track server status to show/hide offline banner â”€â”€â”€â”€â”€â”€
+// ── Track server status to show/hide offline banner ──────
 async function checkServerStatus() {
   try {
     const res = await fetch('/api/server/status');
@@ -82,7 +82,7 @@ async function checkServerStatus() {
   }
 }
 
-// â”€â”€ Fetch and populate all rules â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// ── Fetch and populate all rules ──────────────────────────
 async function loadGamerules() {
   try {
     const res = await fetch('/api/server/gamerules');
@@ -103,7 +103,7 @@ async function loadGamerules() {
   } catch (e) { console.error("Error loading gamerules:", e); }
 }
 
-// â”€â”€ Init â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// ── Init ─────────────────────────────────────────────────
 document.addEventListener('DOMContentLoaded', () => {
   checkServerStatus();
   loadGamerules();

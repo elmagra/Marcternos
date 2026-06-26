@@ -1,4 +1,4 @@
-﻿function $(id) {
+function $(id) {
   return document.getElementById(id);
 }
 
@@ -159,7 +159,7 @@ async function initPlayerProfile(force = false) {
   
   window.handleGamemode = (val) => sendPlayerCommand(player.name, `gamemode ${val.toLowerCase()} ${player.name}`);
 
-  // TP al spawn del jugador â€” respeta la dimensión (Overworld, o Nether si usó respawn anchor)
+  // TP al spawn del jugador — respeta la dimensión (Overworld, o Nether si usó respawn anchor)
   window.tpToSpawn = (x, y, z, dim) => {
     const name = player.name;
     const dimension = dim || 'minecraft:overworld';
@@ -170,7 +170,7 @@ async function initPlayerProfile(force = false) {
     }
   };
 
-  // TP a la última muerte â€” respeta la dimensión donde murió
+  // TP a la última muerte — respeta la dimensión donde murió
   window.tpToLastDeath = (x, y, z, dim) => {
     const name = player.name;
     const dimension = dim || 'minecraft:overworld';

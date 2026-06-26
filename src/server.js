@@ -9,6 +9,7 @@ const { spawn, exec } = require('child_process');
 
 const config = require('./config/config');
 const { downloadFile } = require('./utils/utils');
+const { isPathProtected } = require('./utils/fileProtection');
 const { getJarUrl } = require('./services/jarService');
 const {
     listInstances,
@@ -56,6 +57,14 @@ const app = express();
 
 app.use(cors());
 app.use(express.json());
+app.use((req, res, next) => {
+    const originalJson = res.json.bind(res);
+    res.json = (body) => {
+        res.setHeader('Content-Type', 'application/json; charset=utf-8');
+        return originalJson(body);
+    };
+    next();
+});
 app.use(express.static(config.PANEL_ROOT));
 // Nota: no persistimos activeInstanceId en cada request con instanceId.
 // Hacerlo aquí provoca escrituras concurrentes del registry (incluyendo /api/server/icon)
@@ -65,6 +74,7 @@ app.use((req, res, next) => next());
 // --- REAL STATE ---
 let creationStatus = { steps: [], progress: 0, status: 'idle', name: 'world' };
 let mcProcess = null;
+let runningInstanceId = null;
 let serverState = {
     status: 'offline',
     logs: [],
@@ -81,12 +91,141 @@ let serverState = {
 
 const propMapping = { 'whitelist': 'white-list' };
 
+async function ensureWorldNeverPausesWhenEmpty(serverPath) {
+    if (!serverPath) return;
+    const propPath = path.join(serverPath, 'server.properties');
+    if (!await fs.pathExists(propPath)) return;
+
+    let content = await fs.readFile(propPath, 'utf-8');
+    if (/^pause-when-empty-seconds=-1\s*$/m.test(content)) return;
+
+    if (/^pause-when-empty-seconds=.*$/m.test(content)) {
+        content = content.replace(/^pause-when-empty-seconds=.*$/m, 'pause-when-empty-seconds=-1');
+    } else {
+        content = content.trimEnd() + '\npause-when-empty-seconds=-1\n';
+    }
+    await fs.writeFile(propPath, content, 'utf-8');
+}
+
 // Mapa nombre -> IP para saber quién está baneado por IP (Minecraft no guarda nombre en banned-ips.json)
 let banIpByName = {};
-let gameruleCache = {}; // Cache para gamerules sent via command but maybe not yet in level.dat
+let playerLastIp = {};
+let currentCacheServerPath = null;
 
 const BAN_IP_CACHE_FILENAME = 'ban-ip-cache.json';
 const PLAYER_LAST_IP_FILENAME = 'player-last-ip.json';
+
+function invalidateBanFileCache() {
+    delete lastFileTimestamps['banned-players.json'];
+    delete lastFileTimestamps['banned-ips.json'];
+}
+
+function touchPlayerBanFlags(name, { bannedIp, bannedUuid } = {}) {
+    if (!name) return;
+    const player = serverState.players.find(p => p.name && p.name.toLowerCase() === name.toLowerCase());
+    if (!player) return;
+    if (typeof bannedIp === 'boolean') player.bannedIp = bannedIp;
+    if (typeof bannedUuid === 'boolean') player.bannedUuid = bannedUuid;
+}
+
+async function ensureInstanceCaches(serverPath) {
+    if (!serverPath) return;
+    if (currentCacheServerPath === serverPath) return;
+    currentCacheServerPath = serverPath;
+    banIpByName = {};
+    playerLastIp = {};
+    await loadBanIpCache(serverPath);
+    await loadPlayerLastIp(serverPath);
+}
+
+async function loadBanIpCache(serverPath) {
+    try {
+        const basePath = serverPath || await getFirstServerPath();
+        if (!basePath) return;
+        const cachePath = path.join(basePath, BAN_IP_CACHE_FILENAME);
+        if (await fs.pathExists(cachePath)) {
+            const data = await fs.readJson(cachePath).catch(() => ({}));
+            if (data && typeof data === 'object') banIpByName = { ...data };
+        }
+    } catch (e) {}
+}
+
+async function saveBanIpCache(serverPath) {
+    try {
+        const basePath = serverPath || currentCacheServerPath || await getFirstServerPath();
+        if (!basePath) return;
+        await fs.writeJson(path.join(basePath, BAN_IP_CACHE_FILENAME), banIpByName, { spaces: 2 });
+    } catch (e) {}
+}
+
+async function loadPlayerLastIp(serverPath) {
+    try {
+        const basePath = serverPath || await getFirstServerPath();
+        if (!basePath) return;
+        const f = path.join(basePath, PLAYER_LAST_IP_FILENAME);
+        if (await fs.pathExists(f)) {
+            const data = await fs.readJson(f).catch(() => ({}));
+            if (data && typeof data === 'object') playerLastIp = { ...data };
+        }
+    } catch (e) {}
+}
+
+async function savePlayerLastIp(serverPath) {
+    try {
+        const basePath = serverPath || currentCacheServerPath || await getFirstServerPath();
+        if (!basePath) return;
+        await fs.writeJson(path.join(basePath, PLAYER_LAST_IP_FILENAME), playerLastIp, { spaces: 2 });
+    } catch (e) {}
+}
+
+async function resolvePlayerUuid(name, serverPath) {
+    const player = serverState.players.find(p => p.name && p.name.toLowerCase() === name.toLowerCase());
+    if (player?.uuid && player.uuid !== 'Desconocido') return player.uuid;
+
+    const files = ['usercache.json', 'ops.json', 'whitelist.json', 'banned-players.json'];
+    for (const file of files) {
+        const filePath = path.join(serverPath, file);
+        if (!await fs.pathExists(filePath)) continue;
+        const data = await fs.readJson(filePath).catch(() => []);
+        const entry = data.find(e => e.name && e.name.toLowerCase() === name.toLowerCase());
+        if (entry?.uuid) return entry.uuid;
+    }
+    return null;
+}
+
+async function resolvePlayerIp(name, clientIp, serverPath) {
+    if (clientIp && typeof clientIp === 'string' && clientIp.includes('.') && clientIp !== '0.0.0.0') {
+        return clientIp;
+    }
+
+    const player = serverState.players.find(p => p.name && p.name.toLowerCase() === name.toLowerCase());
+    if (player?.ip && player.ip.includes('.') && player.ip !== '0.0.0.0') return player.ip;
+    if (playerLastIp[name.toLowerCase()]) return playerLastIp[name.toLowerCase()];
+
+    const logPath = path.join(serverPath, 'logs', 'latest.log');
+    if (await fs.pathExists(logPath)) {
+        const content = await fs.readFile(logPath, 'utf-8');
+        const lines = content.split('\n').reverse().slice(0, 2000);
+        const escaped = name.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+        const ipRegex = new RegExp(`${escaped}\\[/(\d+\\.\\d+\\.\\d+\\.\\d+):\\d+\\] logged in`, 'i');
+        for (const line of lines) {
+            const match = line.match(ipRegex);
+            if (match?.[1]) return match[1];
+        }
+    }
+
+    return null;
+}
+
+let gameruleCache = {}; // Cache para gamerules sent via command but maybe not yet in level.dat
+
+async function getActiveServerPath() {
+    if (runningInstanceId) {
+        const inst = await getInstanceById(runningInstanceId);
+        if (inst && inst.path && await fs.pathExists(inst.path)) return inst.path;
+    }
+    return getFirstServerPath();
+}
 
 async function getFirstServerPath() {
     try {
@@ -124,46 +263,35 @@ async function getServerPathFromRequest(req) {
     return getFirstServerPath();
 }
 
-async function loadBanIpCache() {
-    try {
-        const serverPath = await getFirstServerPath();
-        if (!serverPath) return;
-        const cachePath = path.join(serverPath, BAN_IP_CACHE_FILENAME);
-        if (await fs.pathExists(cachePath)) {
-            const data = await fs.readJson(cachePath).catch(() => ({}));
-            if (data && typeof data === 'object') Object.assign(banIpByName, data);
-        }
-    } catch (e) {}
+function isServerRunning() {
+    return !!(mcProcess && (serverState.status === 'online' || serverState.status === 'starting'));
 }
 
-async function saveBanIpCache() {
-    try {
-        const serverPath = await getFirstServerPath();
-        if (!serverPath) return;
-        await fs.writeJson(path.join(serverPath, BAN_IP_CACHE_FILENAME), banIpByName, { spaces: 2 });
-    } catch (e) {}
+async function resolveInstanceIdForPath(serverPath) {
+    if (!serverPath) return null;
+    const instances = await listInstances();
+    const targetKey = path.resolve(serverPath);
+    const normalizedTarget = process.platform === 'win32' ? targetKey.toLowerCase() : targetKey;
+    const match = instances.find((i) => {
+        const ik = path.resolve(i.path);
+        const normalized = process.platform === 'win32' ? ik.toLowerCase() : ik;
+        return normalized === normalizedTarget;
+    });
+    return match ? match.id : null;
 }
 
-let playerLastIp = {};
-
-async function loadPlayerLastIp() {
-    try {
-        const serverPath = await getFirstServerPath();
-        if (!serverPath) return;
-        const f = path.join(serverPath, PLAYER_LAST_IP_FILENAME);
-        if (await fs.pathExists(f)) {
-            const data = await fs.readJson(f).catch(() => ({}));
-            if (data && typeof data === 'object') playerLastIp = data;
-        }
-    } catch (e) {}
+function getRunningInstanceConflictError() {
+    return {
+        error: 'Hay un servidor en ejecución. Apágalo antes de cambiar de instancia.',
+        runningInstanceId
+    };
 }
 
-async function savePlayerLastIp() {
-    try {
-        const serverPath = await getFirstServerPath();
-        if (!serverPath) return;
-        await fs.writeJson(path.join(serverPath, PLAYER_LAST_IP_FILENAME), playerLastIp, { spaces: 2 });
-    } catch (e) {}
+async function assertCanUseInstance(req, instanceId) {
+    if (!isServerRunning() || !runningInstanceId) return true;
+    const targetId = instanceId || getRequestedInstanceId(req);
+    if (targetId && targetId !== runningInstanceId) return false;
+    return true;
 }
 
 function addCreationStep(msg) {
@@ -178,23 +306,23 @@ async function createWorldFromRequest(payload) {
         const type = (payload.type || 'Vanilla').toString();
         const version = (payload.version || '1.20.1').toString();
         const levelName = (payload.levelName || 'world').toString().trim().replace(/[^a-zA-Z0-9_\- ]/g, '') || 'world';
-        // Si el usuario no pone semilla, se deja vacía â†’ Minecraft la genera aleatoriamente
+        // Si el usuario no pone semilla, se deja vacía → Minecraft la genera aleatoriamente
         const levelSeed = (payload.levelSeed || '').toString().trim();
         const levelType = (payload.levelType || 'default').toString();
-        // Semilla: si está vacía, NO ponemos nada â†’ Minecraft genera una aleatoria por sí solo
+        // Semilla: si está vacía, NO ponemos nada → Minecraft genera una aleatoria por sí solo
         const maxWorldSize = payload.maxWorldSize && !isNaN(Number(payload.maxWorldSize))
             ? Number(payload.maxWorldSize)
             : 29999984;
 
         creationStatus = { steps: [], progress: 0, status: 'running', name: levelName };
-        addCreationStep(`ðŸš€ Preparando mundo "${levelName}" Â· ${type} ${version}`);
-        addCreationStep(`ðŸŒ± Semilla: ${levelSeed !== '' ? levelSeed : 'aleatoria (generada por Minecraft)'}  |  Tipo: ${levelType}`);
+        addCreationStep(`🚀 Preparando mundo "${levelName}" · ${type} ${version}`);
+        addCreationStep(`🌱 Semilla: ${levelSeed !== '' ? levelSeed : 'aleatoria (generada por Minecraft)'}  |  Tipo: ${levelType}`);
 
         // 1) Apagar servidor si está encendido
         if (mcProcess) {
-            addCreationStep('â›” Deteniendo servidor actual...');
+            addCreationStep('⛔ Deteniendo servidor actual...');
             await stopProcessSync();
-            addCreationStep('âœ… Servidor detenido.');
+            addCreationStep('✅ Servidor detenido.');
         }
         creationStatus.progress = 5;
 
@@ -209,20 +337,20 @@ async function createWorldFromRequest(payload) {
         const serverPath = path.join(root, instanceId);
         await fs.ensureDir(serverPath);
         await fs.writeFile(path.join(serverPath, '.creating'), String(Date.now()));
-        addCreationStep(`ðŸ“ Carpeta de instancia creada: .../${instanceId}`);
+        addCreationStep(`📁 Carpeta de instancia creada: .../${instanceId}`);
         
         // --- NUEVO: Crear carpetas para mods/plugins antes de la generación ---
         await fs.ensureDir(path.join(serverPath, 'mods'));
         await fs.ensureDir(path.join(serverPath, 'plugins'));
-        addCreationStep(`ðŸ“‚ Carpetas /mods y /plugins creadas (puedes subir mods antes de iniciar).`);
+        addCreationStep(`📂 Carpetas /mods y /plugins creadas (puedes subir mods antes de iniciar).`);
         
         creationStatus.progress = 20;
 
         // 5) Resolver URL del JAR
-        addCreationStep(`ðŸ” Buscando JAR de ${type} ${version}...`);
+        addCreationStep(`🔍 Buscando JAR de ${type} ${version}...`);
         const jarUrl = await getJarUrl(type, version);
         if (!jarUrl) throw new Error(`No se pudo obtener la URL del JAR para ${type} ${version}.`);
-        addCreationStep(`ðŸ”— URL resuelta. Iniciando descarga...`);
+        addCreationStep(`🔗 URL resuelta. Iniciando descarga...`);
         creationStatus.progress = 25;
 
         // 6) Descargar JAR
@@ -232,15 +360,15 @@ async function createWorldFromRequest(payload) {
             // Log cada 25%
             const pct = Math.round(p);
             if (pct === 25 || pct === 50 || pct === 75 || pct === 100) {
-                addCreationStep(`ðŸ“¥ Descargando server.jar... ${pct}%`);
+                addCreationStep(`📥 Descargando server.jar... ${pct}%`);
             }
         });
-        addCreationStep('âœ… server.jar descargado correctamente.');
+        addCreationStep('✅ server.jar descargado correctamente.');
         creationStatus.progress = 72;
 
         // 7) Escribir eula.txt
         await fs.writeFile(path.join(serverPath, 'eula.txt'), 'eula=true\n');
-        addCreationStep('ðŸ“„ EULA aceptada automáticamente.');
+        addCreationStep('📄 EULA aceptada automáticamente.');
         creationStatus.progress = 78;
 
         // 8) Escribir server.properties
@@ -265,11 +393,12 @@ async function createWorldFromRequest(payload) {
             'spawn-protection=16',
             'max-players=20',
             'view-distance=10',
-            'simulation-distance=10'
+            'simulation-distance=10',
+            'pause-when-empty-seconds=-1'
         ];
         const propPath = path.join(serverPath, 'server.properties');
         await fs.writeFile(propPath, props.join('\n') + '\n', 'utf-8');
-        addCreationStep('âš™ï¸ server.properties configurado.');
+        addCreationStep('⚙️ server.properties configurado.');
         creationStatus.progress = 88;
 
         // 9) Inicializar archivos JSON necesarios
@@ -278,7 +407,7 @@ async function createWorldFromRequest(payload) {
         await fs.writeFile(path.join(serverPath, 'whitelist.json'), emptyJson);
         await fs.writeFile(path.join(serverPath, 'banned-players.json'), emptyJson);
         await fs.writeFile(path.join(serverPath, 'banned-ips.json'), emptyJson);
-        addCreationStep('ðŸ“‹ Archivos de configuración inicializados.');
+        addCreationStep('📋 Archivos de configuración inicializados.');
 
         // 10b) Copiar server-icon.png desde resources si existe
         try {
@@ -297,7 +426,7 @@ async function createWorldFromRequest(payload) {
                     break;
                 }
             }
-            if (copied) addCreationStep('ðŸ–¼ï¸ Icono del servidor configurado (server-icon.png).');
+            if (copied) addCreationStep('🖼️ Icono del servidor configurado (server-icon.png).');
         } catch (e) {
             console.warn('[CREATE-WORLD] No se pudo copiar el icono:', e.message);
         }
@@ -315,6 +444,7 @@ async function createWorldFromRequest(payload) {
         serverState.worldSize = '0 MB';
         banIpByName = {};
         playerLastIp = {};
+        currentCacheServerPath = null;
 
         const reg = await registerInstance({
             id: creationStatus.instanceId || undefined,
@@ -328,7 +458,7 @@ async function createWorldFromRequest(payload) {
         await setActiveInstance(reg.id);
         creationStatus.instanceId = reg.id;
 
-        addCreationStep(`ðŸŽ‰ Â¡Mundo "${levelName}" listo! Recuerda subir tus mods o plugins en la sección de 'Archivos' antes de iniciar el servidor para que la generación sea correcta.`);
+        addCreationStep(`🎉 ¡Mundo "${levelName}" listo! Recuerda subir tus mods o plugins en la sección de 'Archivos' antes de iniciar el servidor para que la generación sea correcta.`);
         creationStatus.progress = 100;
         creationStatus.status = 'done';
 
@@ -340,7 +470,7 @@ async function createWorldFromRequest(payload) {
                 await fs.remove(path.join(maybePath, '.creating')).catch(() => {});
             }
         } catch (_e) {}
-        addCreationStep(`âŒ Error: ${e.message}`);
+        addCreationStep(`❌ Error: ${e.message}`);
         creationStatus.status = 'error';
     }
 }
@@ -361,7 +491,7 @@ setInterval(() => {
 
 async function loadWorldName() {
     try {
-        const serverPath = await getFirstServerPath();
+        const serverPath = await getActiveServerPath();
         if (!serverPath) return;
         const propPath = path.join(serverPath, 'server.properties');
         if (await fs.pathExists(propPath)) {
@@ -379,7 +509,7 @@ async function loadWorldName() {
 
 async function peekLogsForMetadata() {
     try {
-        const serverPath = await getFirstServerPath();
+        const serverPath = await getActiveServerPath();
         if (!serverPath) return;
         const logPath = path.join(serverPath, 'logs', 'latest.log');
         if (await fs.pathExists(logPath)) {
@@ -431,7 +561,7 @@ async function updateWorldSize() {
     lastWorldSizeUpdate = Date.now();
 
     try {
-        const serverPath = await getFirstServerPath();
+        const serverPath = await getActiveServerPath();
         if (!serverPath) return;
         if (serverState.worldName === 'Cargando...') await loadWorldName();
         
@@ -485,21 +615,21 @@ function applyOnlinePlayersSnapshot(names) {
 }
 
 // REFRESH PLAYER DATA & DISCOVER DISCONNECTED/BANNED PLAYERS
-// CACHE PARA EL ESCÃNER DE ARCHIVOS
+// CACHE PARA EL ESCÁNER DE ARCHIVOS
 let lastFileTimestamps = {};
 
 // REFRESH PLAYER DATA & DISCOVER DISCONNECTED/BANNED PLAYERS
 async function refreshAllPlayers() {
     try {
-        const serverPath = await getFirstServerPath();
+        const serverPath = await getActiveServerPath();
         if (!serverPath) return;
 
-        if (Object.keys(banIpByName).length === 0) await loadBanIpCache();
-        if (Object.keys(playerLastIp).length === 0) await loadPlayerLastIp();
+        await ensureInstanceCaches(serverPath);
 
         // 1. Discover (con caché de archivos para mayor velocidad)
         const filesToScan = [
             { path: 'banned-players.json', key: 'name' },
+            { path: 'banned-ips.json', key: 'ip' },
             { path: 'whitelist.json', key: 'name' },
             { path: 'ops.json', key: 'name' },
             { path: 'usercache.json', key: 'name' }
@@ -509,31 +639,34 @@ async function refreshAllPlayers() {
             const filePath = path.join(serverPath, file.path);
             if (await fs.pathExists(filePath)) {
                 const stats = await fs.stat(filePath);
-                if (lastFileTimestamps[file.path] === stats.mtimeMs) continue; // No ha cambiado, saltar
+                if (lastFileTimestamps[file.path] === stats.mtimeMs) continue;
                 lastFileTimestamps[file.path] = stats.mtimeMs;
 
                 const data = await fs.readJson(filePath).catch(() => []);
                 data.forEach(entry => {
-                    const name = entry[file.key];
-                    if (name && !serverState.players.find(p => p.name.toLowerCase() === name.toLowerCase())) {
+                    const rawName = entry[file.key];
+                    const name = file.path === 'banned-ips.json'
+                        ? (Object.keys(banIpByName).find(k => banIpByName[k] === rawName) || null)
+                        : rawName;
+                    if (!name || typeof name !== 'string') return;
+                    if (!serverState.players.find(p => p.name.toLowerCase() === name.toLowerCase())) {
                         serverState.players.push({
                             id: name.toLowerCase(),
-                            name: name,
+                            name,
                             online: false,
                             dimension: 'Overworld',
                             location: { x: 0, y: 0, z: 0 },
                             gamemode: 'Survival',
-                            ip: '0.0.0.0'
+                            ip: playerLastIp[name.toLowerCase()] || '0.0.0.0'
                         });
                     }
                 });
             }
         }
 
-        // 2. Update (solo jugadores online o los primeros 10 para ahorrar CPU)
-        const playersToUpdate = serverState.players.filter(p => p.online).slice(0, 20);
-        for (let player of playersToUpdate) {
-            const info = await getPlayerExtendedInfo(player.name);
+        // 2. Actualizar estado de todos los jugadores conocidos (incluye baneos offline)
+        for (const player of serverState.players) {
+            const info = await getPlayerExtendedInfo(player.name, serverPath);
             Object.assign(player, info);
         }
     } catch (e) {}
@@ -553,7 +686,7 @@ setInterval(() => {
 async function loadRealTimeMetadata() {
     try {
         const active = await getActiveInstance();
-        const serverPath = await getFirstServerPath();
+        const serverPath = await getActiveServerPath();
         if (!serverPath) return;
         if (active) serverState.worldName = active.name;
         const propPath = path.join(serverPath, 'server.properties');
@@ -566,10 +699,11 @@ async function loadRealTimeMetadata() {
 }
 loadRealTimeMetadata();
 
-async function getPlayerExtendedInfo(name) {
+async function getPlayerExtendedInfo(name, serverPathArg) {
     try {
-        const serverPath = await getFirstServerPath();
+        const serverPath = serverPathArg || await getActiveServerPath();
         if (!serverPath) return {};
+        await ensureInstanceCaches(serverPath);
         
         let op = false, whitelisted = false, uuid = 'Desconocido', bannedIp = false, bannedUuid = false;
 
@@ -579,6 +713,9 @@ async function getPlayerExtendedInfo(name) {
             const entry = cache.find(c => c.name && c.name.toLowerCase() === name.toLowerCase());
             if (entry) uuid = entry.uuid;
         }
+
+        const playerObj = serverState.players.find(p => p.name.toLowerCase() === name.toLowerCase());
+        if (playerObj?.uuid && playerObj.uuid !== 'Desconocido') uuid = playerObj.uuid;
 
         const opsPath = path.join(serverPath, 'ops.json');
         if (await fs.pathExists(opsPath)) {
@@ -595,19 +732,35 @@ async function getPlayerExtendedInfo(name) {
         const banPath = path.join(serverPath, 'banned-players.json');
         if (await fs.pathExists(banPath)) {
             const bans = await fs.readJson(banPath).catch(() => []);
-            bannedUuid = bans.some(b => b.name && b.name.toLowerCase() === name.toLowerCase());
+            bannedUuid = bans.some(b =>
+                (b.name && b.name.toLowerCase() === name.toLowerCase()) ||
+                (uuid !== 'Desconocido' && b.uuid && b.uuid === uuid)
+            );
         }
 
         const banIpPath = path.join(serverPath, 'banned-ips.json');
+        const ipFromMap = banIpByName[name.toLowerCase()] || null;
+        const knownIp = (playerObj?.ip && playerObj.ip !== '0.0.0.0' ? playerObj.ip : null)
+            || playerLastIp[name.toLowerCase()]
+            || ipFromMap
+            || null;
+
         if (await fs.pathExists(banIpPath)) {
             const bansIp = await fs.readJson(banIpPath).catch(() => []);
-            const playerObj = serverState.players.find(p => p.name.toLowerCase() === name.toLowerCase());
-            const ipFromMap = banIpByName[name.toLowerCase()];
-            bannedIp = bansIp.some(b => 
-                (b.name && b.name.toLowerCase() === name.toLowerCase()) || 
-                (playerObj && playerObj.ip !== '0.0.0.0' && playerObj.ip === b.ip) ||
-                (ipFromMap && bansIp.some(b2 => b2.ip === ipFromMap))
-            );
+            bannedIp = bansIp.some(b => {
+                const bip = (b.ip || '').toString();
+                return (b.name && b.name.toLowerCase() === name.toLowerCase())
+                    || (knownIp && bip === knownIp)
+                    || (ipFromMap && bip === ipFromMap);
+            });
+        }
+
+        if (!bannedIp && ipFromMap) {
+            if (mcProcess) bannedIp = true;
+            else {
+                delete banIpByName[name.toLowerCase()];
+                saveBanIpCache(serverPath);
+            }
         }
 
         const locInfo = await getPlayerLocationFromNbt(name);
@@ -649,7 +802,7 @@ function addLog(msg) {
     if (msg.toLowerCase().includes('mohist')) serverState.software = 'Mohist';
     if (msg.toLowerCase().includes('purpur')) serverState.software = 'Purpur';
 
-    // --- DETECCIÃ“N DE JUGADORES (Mejorada) ---
+    // --- DETECCIÓN DE JUGADORES (Mejorada) ---
     // 1. Detección de Entrada (Joined)
     if (msg.includes(' joined the game')) {
         const parts = msg.split(' joined the game')[0].split(':');
@@ -694,19 +847,38 @@ function addLog(msg) {
     }
 
     // 3. Detección de IP y Login (GameProfile o Login message)
-    const loginMatch = msg.match(/\[.*\/INFO\]: (.*?)\[\/(.*?):\d+\] logged in with entity id/);
-    if (loginMatch) {
+    const loginPatterns = [
+        /\[.*\/INFO\]: (.*?)\[\/(.*?):\d+\] logged in with entity id/,
+        /\[.*\/INFO\]: (.*?)\[\/(.*?):\d+\] logged in/
+    ];
+    for (const pattern of loginPatterns) {
+        const loginMatch = msg.match(pattern);
+        if (!loginMatch) continue;
         const nameVal = loginMatch[1].trim();
         const ipVal = loginMatch[2].trim();
         let p = serverState.players.find(x => x.name.toLowerCase() === nameVal.toLowerCase());
-        if (p) {
+        if (!p) {
+            p = {
+                id: nameVal.toLowerCase(),
+                name: nameVal,
+                online: true,
+                dimension: 'Overworld',
+                location: { x: 0, y: 64, z: 0 },
+                gamemode: 'Survival',
+                health: 20,
+                hunger: 20,
+                ip: ipVal
+            };
+            serverState.players.push(p);
+        } else {
             p.ip = ipVal;
             p.online = true;
-            if (ipVal !== '0.0.0.0') {
-                playerLastIp[nameVal.toLowerCase()] = ipVal;
-                savePlayerLastIp();
-            }
         }
+        if (ipVal !== '0.0.0.0') {
+            playerLastIp[nameVal.toLowerCase()] = ipVal;
+            savePlayerLastIp(currentCacheServerPath);
+        }
+        break;
     }
 
     // 4. Detección de Salida (Left)
@@ -758,7 +930,9 @@ function stopProcessSync() {
         mcProcess.on('close', () => {
             clearTimeout(timer);
             mcProcess = null;
+            runningInstanceId = null;
             serverState.status = 'offline';
+            serverState.startTime = null;
             resolve();
         });
     });
@@ -813,28 +987,32 @@ app.get('/api/instances', async (req, res) => {
                     iconRev = st.mtimeMs || 0;
                 }
             } catch (e) {}
-            const isActive = !!(active && i.id === active.id);
-            const software = isActive
+            const isRunning = runningInstanceId === i.id;
+            const software = isRunning
                 ? (serverState.software || i.software || 'Vanilla')
                 : (i.software || 'Vanilla');
             const versionFromRegistry = String(i.version || '').trim();
             const liveVersion = String(serverState.version || '').trim();
-            const version = isActive && liveVersion && liveVersion !== '...'
+            const version = isRunning && liveVersion && liveVersion !== '...'
                 ? liveVersion
                 : (versionFromRegistry && versionFromRegistry !== '...' ? versionFromRegistry : '');
 
             return {
                 ...i,
-                status: isActive ? serverState.status : (i.status || 'offline'),
+                status: isRunning ? serverState.status : 'offline',
                 version,
                 software,
-                playersOnline: isActive ? activePlayers : 0,
-                uptimeMs: isActive ? activeUptimeMs : 0,
+                playersOnline: isRunning ? activePlayers : 0,
+                uptimeMs: isRunning ? activeUptimeMs : 0,
                 iconRev,
                 iconUrl: `/api/server/icon?instanceId=${encodeURIComponent(i.id)}&rev=${encodeURIComponent(iconRev)}`
             };
         }));
-        res.json({ activeInstanceId: active ? active.id : null, instances: decorated });
+        res.json({
+            activeInstanceId: active ? active.id : null,
+            runningInstanceId,
+            instances: decorated
+        });
     } catch (e) {
         res.status(500).json({ error: e.message });
     }
@@ -908,9 +1086,12 @@ app.post('/api/instances/select', async (req, res) => {
     try {
         const id = (req.body && req.body.instanceId) ? String(req.body.instanceId) : null;
         if (!id) return res.status(400).json({ error: 'Falta instanceId' });
+        if (!(await assertCanUseInstance(req, id))) {
+            return res.status(409).json(getRunningInstanceConflictError());
+        }
         const selected = await setActiveInstance(id);
         if (!selected) return res.status(404).json({ error: 'Instancia no encontrada' });
-        res.json({ message: 'OK', activeInstanceId: selected.id });
+        res.json({ message: 'OK', activeInstanceId: selected.id, runningInstanceId });
     } catch (e) {
         res.status(500).json({ error: e.message });
     }
@@ -959,10 +1140,13 @@ app.post('/api/catalog/refresh', async (req, res) => {
 });
 
 app.get('/api/server/status', async (req, res) => {
+    const serverPath = await getServerPathFromRequest(req);
+    if (serverPath) await ensureInstanceCaches(serverPath);
     const data = { ...serverState };
     data.uptimeMs = serverState.startTime ? (Date.now() - serverState.startTime) : 0;
     const active = await getActiveInstance().catch(() => null);
     data.activeInstanceId = active ? active.id : null;
+    data.runningInstanceId = runningInstanceId;
     data.publicEndpoint = `${detectPublicHost(req)}:${detectPublicPort(req)}`;
     res.json(data);
 });
@@ -1047,7 +1231,7 @@ app.get('/api/server/icon', async (req, res) => {
 
 app.get('/api/server/gamerules', async (req, res) => {
     try {
-        const serverPath = await getFirstServerPath();
+        const serverPath = await getServerPathFromRequest(req);
         if (!serverPath) return res.status(404).json({ error: 'Servidor no encontrado' });
         
         if (serverState.worldName === 'Cargando...') await loadWorldName();
@@ -1095,7 +1279,7 @@ app.post('/api/addons/install', async (req, res) => {
         const { url, name, type } = req.body;
         if (!url || !name || !type) return res.status(400).json({ error: 'Faltan parámetros (url, name, type)' });
         
-        const serverPath = await getFirstServerPath();
+        const serverPath = await getServerPathFromRequest(req);
         if (!serverPath) return res.status(404).json({ error: 'No se encontró la carpeta del servidor. Crea un mundo primero.' });
         
         const destDir = type === 'mod' ? 'mods' : 'plugins';
@@ -1104,11 +1288,11 @@ app.post('/api/addons/install', async (req, res) => {
         await fs.ensureDir(path.join(serverPath, destDir));
         
         console.log(`[ADDON-INSTALL] Descargando ${name} desde ${url}...`);
-        addLog(`ðŸ“¥ Instalando ${type}: ${name}...`);
+        addLog(`📥 Instalando ${type}: ${name}...`);
         
         await downloadFile(url, targetPath);
         
-        addLog(`âœ… ${name} instalado correctamente.`);
+        addLog(`✅ ${name} instalado correctamente.`);
         res.json({ message: 'Instalado con éxito', path: targetPath });
     } catch (e) {
         console.error('Error addon install:', e);
@@ -1118,7 +1302,7 @@ app.post('/api/addons/install', async (req, res) => {
 
 app.get('/api/addons/installed', async (req, res) => {
     try {
-        const serverPath = await getFirstServerPath();
+        const serverPath = await getServerPathFromRequest(req);
         if (!serverPath) return res.json({ mods: [], plugins: [] });
         
         const modsPath = path.join(serverPath, 'mods');
@@ -1138,7 +1322,7 @@ app.post('/api/addons/remove', async (req, res) => {
         const { name, type } = req.body;
         if (!name || !type) return res.status(400).json({ error: 'Faltan parámetros' });
         
-        const serverPath = await getFirstServerPath();
+        const serverPath = await getServerPathFromRequest(req);
         if (!serverPath) return res.status(404).json({ error: 'No se encontró el servidor' });
         
         const destDir = type === 'mod' ? 'mods' : 'plugins';
@@ -1146,7 +1330,7 @@ app.post('/api/addons/remove', async (req, res) => {
         
         if (await fs.pathExists(targetPath)) {
             await fs.remove(targetPath);
-            addLog(`ðŸ—‘ï¸ Addon eliminado: ${name}`);
+            addLog(`🗑️ Addon eliminado: ${name}`);
             res.json({ message: 'Eliminado con éxito' });
         } else {
             res.status(404).json({ error: 'El archivo no existe' });
@@ -1170,7 +1354,7 @@ app.get('/api/creation-status', (req, res) => {
 
 async function getPlayerLocationFromNbt(playerName) {
     try {
-        const serverPath = await getFirstServerPath();
+        const serverPath = await getServerPathFromRequest(req);
         if (!serverPath) return null;
         const usercachePath = path.join(serverPath, 'usercache.json');
         if (!(await fs.pathExists(usercachePath))) return null;
@@ -1274,7 +1458,7 @@ async function getPlayerLocationFromNbt(playerName) {
         const ld = simple.LastDeathPos || simple.LastDeathLocation;
         if (ld) {
             if (Array.isArray(ld)) {
-                // Formato antiguo: array puro [x, y, z] â€” sin dimensión guardada
+                // Formato antiguo: array puro [x, y, z] — sin dimensión guardada
                 lastDeath = { x: Math.floor(toNum(ld[0])), y: Math.floor(toNum(ld[1])), z: Math.floor(toNum(ld[2])) };
             } else if (ld.pos && Array.isArray(ld.pos)) {
                 // Formato 1.17+: { dimension: "minecraft:the_nether", pos: [x, y, z] }
@@ -1322,11 +1506,19 @@ app.get('/api/server/player/:name/location', async (req, res) => {
 });
 
 app.post('/api/server/start', async (req, res) => {
-    if (mcProcess) return res.status(400).json({ error: 'Ya encendido' });
+    const requestedId = getRequestedInstanceId(req);
+    if (mcProcess) {
+        if (runningInstanceId && requestedId && requestedId !== runningInstanceId) {
+            return res.status(409).json(getRunningInstanceConflictError());
+        }
+        return res.status(400).json({ error: 'Ya encendido' });
+    }
     await cleanupLingeringJava();
     try {
         const serverPath = await getServerPathFromRequest(req);
         if (!serverPath) return res.status(404).json({ error: 'Servidor no encontrado' });
+        runningInstanceId = requestedId || await resolveInstanceIdForPath(serverPath);
+        await ensureWorldNeverPausesWhenEmpty(serverPath);
         serverState.logs = [];
         serverState.status = 'starting';
         const javaFlags = config.JAVA_ARGS.split(' ').filter(arg => arg.trim() !== '');
@@ -1335,11 +1527,12 @@ app.post('/api/server/start', async (req, res) => {
         // Manejador de errores para evitar que el servidor se caiga si no se encuentra Java
         mcProcess.on('error', (err) => {
             console.error('Error al iniciar el proceso de Minecraft:', err);
-            addLog(`Â¡ERROR CRÃTICO! No se pudo iniciar el servidor: ${err.message}`);
+            addLog(`¡ERROR CRÍTICO! No se pudo iniciar el servidor: ${err.message}`);
             if (err.code === 'ENOENT') {
                 addLog('Asegúrate de tener Java instalado y en el PATH, o configura la ruta en config.js');
             }
             serverState.status = 'offline';
+            runningInstanceId = null;
         });
         mcProcess.stdout.on('data', data => {
             data.toString().split('\n').forEach(line => {
@@ -1379,6 +1572,7 @@ app.post('/api/server/start', async (req, res) => {
         mcProcess.on('close', () => { 
             serverState.status = 'offline'; 
             mcProcess = null; 
+            runningInstanceId = null;
             serverState.startTime = null;
             resetPlayersOnlineStatus();
         });
@@ -1393,6 +1587,9 @@ app.post('/api/server/restart', async (req, res) => {
     setTimeout(async () => {
         const serverPath = await getServerPathFromRequest(req);
         if (!serverPath) return res.status(404).json({ error: 'Servidor no encontrado' });
+        const requestedId = getRequestedInstanceId(req);
+        runningInstanceId = requestedId || await resolveInstanceIdForPath(serverPath);
+        await ensureWorldNeverPausesWhenEmpty(serverPath);
         serverState.logs = [];
         serverState.status = 'starting';
         const javaFlags = config.JAVA_ARGS.split(' ').filter(arg => arg.trim() !== '');
@@ -1400,11 +1597,12 @@ app.post('/api/server/restart', async (req, res) => {
         
         mcProcess.on('error', (err) => {
             console.error('Error al iniciar el proceso de Minecraft (RESTART):', err);
-            addLog(`Â¡ERROR CRÃTICO! No se pudo iniciar el servidor tras el reinicio: ${err.message}`);
+            addLog(`¡ERROR CRÍTICO! No se pudo iniciar el servidor tras el reinicio: ${err.message}`);
             if (err.code === 'ENOENT') {
                 addLog('Asegúrate de tener Java instalado y en el PATH, o configura la ruta en config.js');
             }
             serverState.status = 'offline';
+            runningInstanceId = null;
         });
         mcProcess.stdout.on('data', data => {
             data.toString().split('\n').forEach(line => {
@@ -1440,6 +1638,7 @@ app.post('/api/server/restart', async (req, res) => {
         mcProcess.on('close', () => { 
             serverState.status = 'offline'; 
             mcProcess = null; 
+            runningInstanceId = null;
             serverState.startTime = null;
             resetPlayersOnlineStatus();
         });
@@ -1452,38 +1651,41 @@ app.post('/api/server/ban-ip', async (req, res) => {
     try {
         const { name, ip } = req.body || {};
         if (!name || typeof name !== 'string') return res.status(400).json({ error: 'Falta el nombre del jugador' });
-        const serverPath = await getFirstServerPath();
+        const serverPath = await getServerPathFromRequest(req);
         if (!serverPath) return res.status(404).json({ error: 'Servidor no encontrado' });
-        const banIpPath = path.join(serverPath, 'banned-ips.json');
-        const clientIp = (ip && typeof ip === 'string' && ip.includes('.') && ip !== '0.0.0.0') ? ip : null;
+        await ensureInstanceCaches(serverPath);
 
-        await loadPlayerLastIp();
-        const targetIp = clientIp || playerLastIp[name.toLowerCase()] || null;
-        if (!targetIp) return res.status(400).json({ error: 'Servidor apagado o IP no encontrada. Necesitas la IP del jugador (que se haya conectado alguna vez).' });
+        const banIpPath = path.join(serverPath, 'banned-ips.json');
+        const targetIp = await resolvePlayerIp(name, ip, serverPath);
+        if (!targetIp) {
+            return res.status(400).json({ error: 'IP no encontrada. El jugador debe haberse conectado al menos una vez con el servidor encendido.' });
+        }
 
         if (mcProcess) {
             mcProcess.stdin.write(`ban-ip ${targetIp}\n`);
-            // Cacheamos la IP sospechosa inmediatamente para que la UI no parpadee
             banIpByName[name.toLowerCase()] = targetIp;
-            saveBanIpCache();
-            // Refrescamos después de un tiempo para confirmar lo que Minecraft escribió
+            saveBanIpCache(serverPath);
+            touchPlayerBanFlags(name, { bannedIp: true });
+            invalidateBanFileCache();
             setTimeout(refreshAllPlayers, 2500);
             return res.json({ message: 'OK' });
         }
 
-
         let bans = await fs.pathExists(banIpPath) ? await fs.readJson(banIpPath).catch(() => []) : [];
-        if (bans.some(b => (b.ip || '') === targetIp)) return res.json({ message: 'OK' });
-        bans.push({
-            ip: targetIp,
-            created: new Date().toISOString().replace('T', ' ').slice(0, 19) + ' +0000',
-            source: 'Server',
-            expires: 'forever',
-            reason: 'Banned by an operator.'
-        });
-        await fs.writeJson(banIpPath, bans, { spaces: 2 });
+        if (!bans.some(b => (b.ip || '') === targetIp)) {
+            bans.push({
+                ip: targetIp,
+                created: new Date().toISOString().replace('T', ' ').slice(0, 19) + ' +0000',
+                source: 'Server',
+                expires: 'forever',
+                reason: 'Banned by an operator.'
+            });
+            await fs.writeJson(banIpPath, bans, { spaces: 2 });
+        }
         banIpByName[name.toLowerCase()] = targetIp;
-        saveBanIpCache();
+        saveBanIpCache(serverPath);
+        touchPlayerBanFlags(name, { bannedIp: true });
+        invalidateBanFileCache();
         refreshAllPlayers();
         setTimeout(refreshAllPlayers, 500);
         res.json({ message: 'OK' });
@@ -1493,22 +1695,22 @@ app.post('/api/server/ban-ip', async (req, res) => {
 app.post('/api/server/pardon-ip', async (req, res) => {
     try {
         const { name, ip } = req.body || {};
-        const serverPath = await getFirstServerPath();
+        const serverPath = await getServerPathFromRequest(req);
         if (!serverPath) return res.status(404).json({ error: 'Servidor no encontrado' });
+        await ensureInstanceCaches(serverPath);
+
         const banIpPath = path.join(serverPath, 'banned-ips.json');
         let targetIp = ip;
 
         if (!targetIp && name) {
             if (name.includes('.')) targetIp = name;
             else {
-                const player = serverState.players.find(p => p.name && p.name.toLowerCase() === name.toLowerCase());
-                if (player && player.ip && player.ip.includes('.') && player.ip !== '0.0.0.0') targetIp = player.ip;
-                if (!targetIp) { await loadPlayerLastIp(); targetIp = playerLastIp[name.toLowerCase()] || null; }
+                targetIp = await resolvePlayerIp(name, null, serverPath);
             }
             if (!targetIp && await fs.pathExists(banIpPath)) {
                 const bans = await fs.readJson(banIpPath);
-                const byName = bans.find(b => b.name && b.name.toLowerCase() === name.toLowerCase());
-                if (byName && byName.ip) targetIp = byName.ip;
+                const cached = banIpByName[name.toLowerCase()];
+                if (cached) targetIp = cached;
                 else if (bans.length === 1 && bans[0].ip) targetIp = bans[0].ip;
             }
         }
@@ -1517,10 +1719,11 @@ app.post('/api/server/pardon-ip', async (req, res) => {
 
         if (mcProcess) {
             mcProcess.stdin.write(`pardon-ip ${targetIp}\n`);
-            // Limpiar cache hoy mismo
             for (const k of Object.keys(banIpByName)) { if (banIpByName[k] === targetIp) delete banIpByName[k]; }
             if (name) delete banIpByName[name.toLowerCase()];
-            saveBanIpCache();
+            saveBanIpCache(serverPath);
+            touchPlayerBanFlags(name, { bannedIp: false });
+            invalidateBanFileCache();
             setTimeout(refreshAllPlayers, 2000);
             return res.json({ message: 'OK' });
         }
@@ -1531,8 +1734,11 @@ app.post('/api/server/pardon-ip', async (req, res) => {
             bans = bans.filter(b => (b.ip || '').toString() !== targetIp);
             if (bans.length < before) {
                 await fs.writeJson(banIpPath, bans, { spaces: 2 });
+                for (const k of Object.keys(banIpByName)) { if (banIpByName[k] === targetIp) delete banIpByName[k]; }
                 if (name) delete banIpByName[name.toLowerCase()];
-                saveBanIpCache();
+                saveBanIpCache(serverPath);
+                touchPlayerBanFlags(name, { bannedIp: false });
+                invalidateBanFileCache();
                 refreshAllPlayers();
                 setTimeout(refreshAllPlayers, 500);
                 return res.json({ message: 'OK' });
@@ -1546,34 +1752,34 @@ app.post('/api/server/ban', async (req, res) => {
     try {
         const { name } = req.body || {};
         if (!name) return res.status(400).json({ error: 'Falta el nombre' });
+
+        const serverPath = await getServerPathFromRequest(req);
+        if (!serverPath) return res.status(404).json({ error: 'Servidor no encontrado' });
+        await ensureInstanceCaches(serverPath);
         
         if (mcProcess) {
             mcProcess.stdin.write(`ban ${name}\n`);
+            touchPlayerBanFlags(name, { bannedUuid: true });
+            invalidateBanFileCache();
             setTimeout(refreshAllPlayers, 2000);
             return res.json({ message: 'OK' });
         }
 
-        const serverPath = await getFirstServerPath();
-        if (!serverPath) return res.status(404).json({ error: 'Servidor no encontrado' });
         const banPath = path.join(serverPath, 'banned-players.json');
-        const cachePath = path.join(serverPath, 'usercache.json');
-
-        // Intentar obtener UUID del cache
-        let uuid = null;
-        if (await fs.pathExists(cachePath)) {
-            const cache = await fs.readJson(cachePath).catch(() => []);
-            const entry = cache.find(c => c.name && c.name.toLowerCase() === name.toLowerCase());
-            if (entry) uuid = entry.uuid;
+        const uuid = await resolvePlayerUuid(name, serverPath);
+        if (!uuid) {
+            return res.status(400).json({ error: 'No se encontró el UUID del jugador. Debe haber entrado al servidor al menos una vez.' });
         }
 
-        if (!uuid) return res.status(400).json({ error: 'No se encontró el UUID del jugador. El servidor debe estar encendido o el jugador haber entrado antes.' });
-
         let bans = await fs.pathExists(banPath) ? await fs.readJson(banPath).catch(() => []) : [];
-        if (bans.some(b => b.uuid === uuid)) return res.json({ message: 'OK' });
+        if (bans.some(b => b.uuid === uuid)) {
+            touchPlayerBanFlags(name, { bannedUuid: true });
+            return res.json({ message: 'OK' });
+        }
 
         bans.push({
-            uuid: uuid,
-            name: name,
+            uuid,
+            name,
             created: new Date().toISOString().replace('T', ' ').slice(0, 19) + ' +0000',
             source: 'Server',
             expires: 'forever',
@@ -1581,6 +1787,8 @@ app.post('/api/server/ban', async (req, res) => {
         });
 
         await fs.writeJson(banPath, bans, { spaces: 2 });
+        touchPlayerBanFlags(name, { bannedUuid: true });
+        invalidateBanFileCache();
         refreshAllPlayers();
         setTimeout(refreshAllPlayers, 500);
         res.json({ message: 'OK' });
@@ -1592,22 +1800,33 @@ app.post('/api/server/pardon', async (req, res) => {
         const { name } = req.body || {};
         if (!name) return res.status(400).json({ error: 'Falta el nombre' });
 
+        const serverPath = await getServerPathFromRequest(req);
+        if (!serverPath) return res.status(404).json({ error: 'Servidor no encontrado' });
+        await ensureInstanceCaches(serverPath);
+
         if (mcProcess) {
             mcProcess.stdin.write(`pardon ${name}\n`);
+            touchPlayerBanFlags(name, { bannedUuid: false });
+            invalidateBanFileCache();
             setTimeout(refreshAllPlayers, 2000);
             return res.json({ message: 'OK' });
         }
 
-        const serverPath = await getFirstServerPath();
-        if (!serverPath) return res.status(404).json({ error: 'Servidor no encontrado' });
         const banPath = path.join(serverPath, 'banned-players.json');
 
         if (await fs.pathExists(banPath)) {
             let bans = await fs.readJson(banPath);
+            const uuid = await resolvePlayerUuid(name, serverPath);
             const before = bans.length;
-            bans = bans.filter(b => b.name && b.name.toLowerCase() !== name.toLowerCase());
+            bans = bans.filter(b => {
+                if (b.name && b.name.toLowerCase() === name.toLowerCase()) return false;
+                if (uuid && b.uuid === uuid) return false;
+                return true;
+            });
             if (bans.length < before) {
                 await fs.writeJson(banPath, bans, { spaces: 2 });
+                touchPlayerBanFlags(name, { bannedUuid: false });
+                invalidateBanFileCache();
                 refreshAllPlayers();
                 setTimeout(refreshAllPlayers, 500);
                 return res.json({ message: 'OK' });
@@ -1737,6 +1956,10 @@ app.post('/api/server/command', async (req, res) => {
     if (baseCmd === 'deop') touchPlayerFlag(arg1, 'op', false);
     if (baseCmd === 'whitelist' && arg1.toLowerCase() === 'add') touchPlayerFlag(arg2, 'whitelisted', true);
     if (baseCmd === 'whitelist' && arg1.toLowerCase() === 'remove') touchPlayerFlag(arg2, 'whitelisted', false);
+    if (baseCmd === 'ban') touchPlayerBanFlags(arg1, { bannedUuid: true });
+    if (baseCmd === 'pardon') touchPlayerBanFlags(arg1, { bannedUuid: false });
+    if (baseCmd === 'ban-ip') touchPlayerBanFlags(arg1, { bannedIp: true });
+    if (baseCmd === 'pardon-ip') touchPlayerBanFlags(arg1, { bannedIp: false });
 
     mcProcess.stdin.write(command + '\n');
     setTimeout(refreshAllPlayers, 1000); 
@@ -1745,7 +1968,7 @@ app.post('/api/server/command', async (req, res) => {
 
 app.post('/api/server/properties', async (req, res) => {
     try {
-        const serverPath = await getFirstServerPath();
+        const serverPath = await getServerPathFromRequest(req);
         if (!serverPath) return res.status(404).json({ error: 'Servidor no encontrado' });
         const propPath = path.join(serverPath, 'server.properties');
         
@@ -1766,6 +1989,7 @@ app.post('/api/server/properties', async (req, res) => {
             const realKey = propMapping[key] || key;
             existingProps[realKey] = val;
         }
+        existingProps['pause-when-empty-seconds'] = '-1';
 
         let content = "# MC props\n";
         for (let [key, val] of Object.entries(existingProps)) {
@@ -1779,7 +2003,7 @@ app.post('/api/server/properties', async (req, res) => {
 
 app.get('/api/server/properties', async (req, res) => {
     try {
-        const serverPath = await getFirstServerPath();
+        const serverPath = await getServerPathFromRequest(req);
         if (!serverPath) return res.status(404).json({ error: 'Servidor no encontrado' });
         const propPath = path.join(serverPath, 'server.properties');
         const content = await fs.readFile(propPath, 'utf-8');
@@ -1799,7 +2023,7 @@ app.get('/api/server/properties', async (req, res) => {
 
 app.get('/api/files', async (req, res) => {
     try {
-        const serverPath = await getFirstServerPath();
+        const serverPath = await getServerPathFromRequest(req);
         if (!serverPath) return res.json([]);
         const subPath = (req.query.path || '/').replace(/^\//, '');
         const targetDir = path.normalize(path.join(serverPath, subPath));
@@ -1845,7 +2069,7 @@ const { IncomingForm } = require('formidable');
 
 app.post('/api/upload', async (req, res) => {
     try {
-        const serverPath = await getFirstServerPath();
+        const serverPath = await getServerPathFromRequest(req);
         if (!serverPath) return res.status(404).json({ error: 'Servidor no encontrado' });
         const subPath = (req.query.path || '/').replace(/^\//, '');
         const targetDir = path.join(serverPath, subPath);
@@ -1867,7 +2091,7 @@ app.post('/api/upload', async (req, res) => {
 
 app.get('/api/files/download', async (req, res) => {
     try {
-        const serverPath = await getFirstServerPath();
+        const serverPath = await getServerPathFromRequest(req);
         if (!serverPath) return res.status(404).json({ error: 'Servidor no encontrado' });
         const subPath = (req.query.path || '').replace(/^\//, '');
         const targetFile = path.join(serverPath, subPath);
@@ -1879,10 +2103,16 @@ app.get('/api/files/download', async (req, res) => {
 
 app.post('/api/files/delete', async (req, res) => {
     try {
-        const serverPath = await getFirstServerPath();
+        const serverPath = await getServerPathFromRequest(req);
         if (!serverPath) return res.status(404).json({ error: 'Servidor no encontrado' });
         const { path: subPath } = req.body;
-        const target = path.join(serverPath, (subPath || '').replace(/^\//, ''));
+        const relativePath = (subPath || '').replace(/^\//, '');
+
+        if (isPathProtected(relativePath)) {
+            return res.status(403).json({ error: 'Este archivo del sistema no se puede eliminar' });
+        }
+
+        const target = path.join(serverPath, relativePath);
 
         if (!(await fs.pathExists(target))) return res.status(404).json({ error: 'No existe' });
         await fs.remove(target);
@@ -1892,12 +2122,18 @@ app.post('/api/files/delete', async (req, res) => {
 
 app.post('/api/files/rename', async (req, res) => {
     try {
-        const serverPath = await getFirstServerPath();
+        const serverPath = await getServerPathFromRequest(req);
         if (!serverPath) return res.status(404).json({ error: 'Servidor no encontrado' });
         const { oldPath, newPath } = req.body;
-        
-        const oldTarget = path.join(serverPath, (oldPath || '').replace(/^\//, ''));
-        const newTarget = path.join(serverPath, (newPath || '').replace(/^\//, ''));
+        const oldRelative = (oldPath || '').replace(/^\//, '');
+        const newRelative = (newPath || '').replace(/^\//, '');
+
+        if (isPathProtected(oldRelative) || isPathProtected(newRelative)) {
+            return res.status(403).json({ error: 'Este archivo del sistema no se puede renombrar' });
+        }
+
+        const oldTarget = path.join(serverPath, oldRelative);
+        const newTarget = path.join(serverPath, newRelative);
 
         if (!(await fs.pathExists(oldTarget))) return res.status(404).json({ error: 'No existe' });
         await fs.move(oldTarget, newTarget);
@@ -1907,7 +2143,7 @@ app.post('/api/files/rename', async (req, res) => {
 
 app.post('/api/files/create-folder', async (req, res) => {
     try {
-        const serverPath = await getFirstServerPath();
+        const serverPath = await getServerPathFromRequest(req);
         if (!serverPath) return res.status(404).json({ error: 'Servidor no encontrado' });
         const { path: subPath, name } = req.body;
         const target = path.join(serverPath, (subPath || '').replace(/^\//, ''), name);
@@ -1919,7 +2155,7 @@ app.post('/api/files/create-folder', async (req, res) => {
 
 app.get('/api/files/content', async (req, res) => {
     try {
-        const serverPath = await getFirstServerPath();
+        const serverPath = await getServerPathFromRequest(req);
         if (!serverPath) return res.status(404).json({ error: 'Servidor no encontrado' });
 
         const subPath = (req.query.path || '').replace(/^\//, '');
@@ -1944,7 +2180,7 @@ app.get('/api/files/content', async (req, res) => {
 
 app.post('/api/files/content', async (req, res) => {
     try {
-        const serverPath = await getFirstServerPath();
+        const serverPath = await getServerPathFromRequest(req);
         if (!serverPath) return res.status(404).json({ error: 'Servidor no encontrado' });
         const { path: subPath, content } = req.body;
         const target = path.join(serverPath, (subPath || '').replace(/^\//, ''));
@@ -1967,11 +2203,11 @@ app.post('/api/backups/create', async (req, res) => {
 
         // Si el servidor está encendido, guardamos y desactivamos el auto-guardado temporalmente
         if (mcProcess) {
-            addLog('ðŸ’¾ Preparando servidor para backup (save-all)...');
+            addLog('💾 Preparando servidor para backup (save-all)...');
             mcProcess.stdin.write('save-all\n');
             await new Promise(r => setTimeout(r, 2000));
             mcProcess.stdin.write('save-off\n');
-            addLog('ðŸ”’ Auto-guardado desactivado temporalmente para el backup.');
+            addLog('🔒 Auto-guardado desactivado temporalmente para el backup.');
         }
 
         const { name, description } = req.body || {};
@@ -1979,7 +2215,7 @@ app.post('/api/backups/create', async (req, res) => {
 
         if (mcProcess) {
             mcProcess.stdin.write('save-on\n');
-            addLog('ðŸ”— Auto-guardado reactivado tras el backup.');
+            addLog('🔗 Auto-guardado reactivado tras el backup.');
         }
 
         res.json({ message: 'OK', backup });
@@ -2086,7 +2322,7 @@ app.get('/api/backups/:id', async (req, res) => {
 
 app.get('/api/files/download-folder', async (req, res) => {
     try {
-        const serverPath = await getFirstServerPath();
+        const serverPath = await getServerPathFromRequest(req);
         if (!serverPath) return res.status(404).json({ error: 'Servidor no encontrado' });
         const subPath = (req.query.path || '').replace(/^\//, '');
         const targetDir = path.join(serverPath, subPath);

@@ -13,7 +13,7 @@
   <link rel="stylesheet" href="css/properties.css" />
   <link rel="stylesheet" href="css/responsive.css" />
   <style>
-    /* â”€â”€ Gamerules page extras â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
+    /* ── Gamerules page extras ──────────────── */
     .gr-grid {
       display: grid;
       grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
@@ -58,7 +58,7 @@
       gap: 10px;
     }
 
-    /* â”€ Rule row  â”€ */
+    /* ─ Rule row  ─ */
     .rule-row {
       display: flex;
       align-items: center;
@@ -227,13 +227,13 @@
       <!-- Offline warning -->
       <div id="offlineWarning">
         <i class="fa-solid fa-triangle-exclamation"></i>
-        <span>El servidor estï¿½ apagado. Los cambios de gamerule <strong>solo se aplican con el servidor encendido.</strong></span>
+        <span>El servidor est� apagado. Los cambios de gamerule <strong>solo se aplican con el servidor encendido.</strong></span>
       </div>
 
       <!-- Grid of rule cards -->
       <div class="gr-grid">
 
-        <!-- â”€â”€ JUGADORES â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ -->
+        <!-- ── JUGADORES ─────────────────────────────── -->
         <div class="gr-card">
           <div class="gr-card-header">
             <i class="fa-solid fa-user-shield icon-purple"></i>
@@ -304,7 +304,7 @@
           </div>
         </div>
 
-        <!-- â”€â”€ COMBATE / DIFICULTAD â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ -->
+        <!-- ── COMBATE / DIFICULTAD ───────────────────── -->
         <div class="gr-card">
           <div class="gr-card-header">
             <i class="fa-solid fa-skull-crossbones icon-red"></i>
@@ -316,7 +316,7 @@
             <div class="rule-row">
               <div class="rule-info">
                 <span class="rule-name">naturalRegeneration</span>
-                <span class="help-badge" data-tip="Regeneraciï¿½n natural de vida">?</span>
+                <span class="help-badge" data-tip="Regeneraci�n natural de vida">?</span>
               </div>
               <label class="switch">
                 <input type="checkbox" id="naturalRegeneration" checked onchange="applyToggle('naturalRegeneration', this)">
@@ -363,11 +363,11 @@
           </div>
         </div>
 
-        <!-- â”€â”€ MUNDO / GENERACIÃ“N â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ -->
+        <!-- ── MUNDO / GENERACIÓN ─────────────────────── -->
         <div class="gr-card">
           <div class="gr-card-header">
             <i class="fa-solid fa-earth-europe icon-green"></i>
-            <h3>Mundo y Generaciï¿½n</h3>
+            <h3>Mundo y Generaci�n</h3>
           </div>
           <div class="gr-card-body">
 
@@ -375,7 +375,7 @@
             <div class="rule-row">
               <div class="rule-info">
                 <span class="rule-name">doDaylightCycle</span>
-                <span class="help-badge" data-tip="Activar el ciclo dï¿½a/noche">?</span>
+                <span class="help-badge" data-tip="Activar el ciclo d�a/noche">?</span>
               </div>
               <label class="switch">
                 <input type="checkbox" id="doDaylightCycle" checked onchange="applyToggle('doDaylightCycle', this)">
@@ -411,7 +411,7 @@
             <div class="rule-row">
               <div class="rule-info">
                 <span class="rule-name">doLeafDecay</span>
-                <span class="help-badge" data-tip="Las hojas se degradan cuando se cortan ï¿½rboles">?</span>
+                <span class="help-badge" data-tip="Las hojas se degradan cuando se cortan �rboles">?</span>
               </div>
               <label class="switch">
                 <input type="checkbox" id="doLeafDecay" checked onchange="applyToggle('doLeafDecay', this)">
@@ -434,7 +434,7 @@
           </div>
         </div>
 
-        <!-- â”€â”€ DROPS / LOOT â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ -->
+        <!-- ── DROPS / LOOT ────────────────────────────── -->
         <div class="gr-card">
           <div class="gr-card-header">
             <i class="fa-solid fa-box-open icon-orange"></i>
@@ -481,7 +481,7 @@
           </div>
         </div>
 
-        <!-- â”€â”€ SPAWNING â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ -->
+        <!-- ── SPAWNING ──────────────────────────────────── -->
         <div class="gr-card">
           <div class="gr-card-header">
             <i class="fa-solid fa-dragon icon-cyan"></i>
@@ -493,7 +493,7 @@
             <div class="rule-row">
               <div class="rule-info">
                 <span class="rule-name">doMobSpawning</span>
-                <span class="help-badge" data-tip="Apariciï¿½n natural de mobs">?</span>
+                <span class="help-badge" data-tip="Aparici�n natural de mobs">?</span>
               </div>
               <label class="switch">
                 <input type="checkbox" id="doMobSpawning" checked onchange="applyToggle('doMobSpawning', this)">
@@ -505,7 +505,7 @@
             <div class="rule-row">
               <div class="rule-info">
                 <span class="rule-name">doInsomnia</span>
-                <span class="help-badge" data-tip="Apariciï¿½n de phantoms si no se duerme">?</span>
+                <span class="help-badge" data-tip="Aparici�n de phantoms si no se duerme">?</span>
               </div>
               <label class="switch">
                 <input type="checkbox" id="doInsomnia" checked onchange="applyToggle('doInsomnia', this)">
@@ -517,7 +517,7 @@
             <div class="rule-row">
               <div class="rule-info">
                 <span class="rule-name">doPatrolSpawning</span>
-                <span class="help-badge" data-tip="Apariciï¿½n de patrullas de pillagers">?</span>
+                <span class="help-badge" data-tip="Aparici�n de patrullas de pillagers">?</span>
               </div>
               <label class="switch">
                 <input type="checkbox" id="doPatrolSpawning" checked onchange="applyToggle('doPatrolSpawning', this)">
@@ -529,7 +529,7 @@
             <div class="rule-row">
               <div class="rule-info">
                 <span class="rule-name">doTraderSpawning</span>
-                <span class="help-badge" data-tip="Apariciï¿½n del comerciante errante">?</span>
+                <span class="help-badge" data-tip="Aparici�n del comerciante errante">?</span>
               </div>
               <label class="switch">
                 <input type="checkbox" id="doTraderSpawning" checked onchange="applyToggle('doTraderSpawning', this)">
@@ -540,7 +540,7 @@
           </div>
         </div>
 
-        <!-- â”€â”€ COMANDOS / AVANZADO â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ -->
+        <!-- ── COMANDOS / AVANZADO ───────────────────────── -->
         <div class="gr-card">
           <div class="gr-card-header">
             <i class="fa-solid fa-terminal icon-blue"></i>
@@ -600,7 +600,7 @@
             <div class="rule-row">
               <div class="rule-info">
                 <span class="rule-name">maxEntityCramming</span>
-                <span class="help-badge" data-tip="Mï¿½ximo de entidades en el mismo bloque antes de hacer daï¿½o. Default: 24">?</span>
+                <span class="help-badge" data-tip="M�ximo de entidades en el mismo bloque antes de hacer da�o. Default: 24">?</span>
               </div>
               <div style="display:flex;align-items:center;gap:6px;flex-shrink:0;">
                 <input type="number" class="rule-input" id="maxEntityCramming" value="24" min="0" max="1000">

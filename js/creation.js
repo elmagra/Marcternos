@@ -1,4 +1,4 @@
-﻿let selectedSoftware = 'Vanilla';
+let selectedSoftware = 'Vanilla';
 let pollInterval = null;
 
 function normalizeSoftwareLabel(raw) {

@@ -1,6 +1,7 @@
 function el(id) { return document.getElementById(id); }
 let lastInstancesHash = '';
 let cachedInstances = [];
+let runningInstanceId = null;
 let armedDeleteId = null;
 let armedDeleteTimer = null;
 
@@ -26,28 +27,58 @@ function formatUptime(ms) {
   return `${String(h).padStart(2, '0')}:${String(m).padStart(2, '0')}:${String(s).padStart(2, '0')}`;
 }
 
+function isAnotherInstanceRunning(targetId) {
+  return runningInstanceId && runningInstanceId !== targetId;
+}
+
+function showRunningConflictAlert() {
+  alert('Hay un servidor en ejecución. Apágalo antes de cambiar de instancia o iniciar otro mundo.');
+}
+
 async function selectInstance(instanceId) {
+  if (isAnotherInstanceRunning(instanceId)) {
+    showRunningConflictAlert();
+    return false;
+  }
   localStorage.setItem('activeInstanceId', instanceId);
-  await fetch('/api/instances/select', {
+  const res = await fetch('/api/instances/select', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ instanceId })
-  }).catch(() => {});
+  }).catch(() => null);
+  if (res && res.status === 409) {
+    showRunningConflictAlert();
+    return false;
+  }
+  return true;
 }
 
 async function doAction(ev, instanceId, endpoint) {
   ev.stopPropagation();
+  if (endpoint.includes('/start') && isAnotherInstanceRunning(instanceId)) {
+    showRunningConflictAlert();
+    return;
+  }
   const btn = ev.currentTarget;
   const oldText = btn.innerHTML;
   btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i>';
   btn.disabled = true;
   
-  await selectInstance(instanceId);
-  await fetch(endpoint, {
+  const ok = await selectInstance(instanceId);
+  if (!ok) {
+    btn.innerHTML = oldText;
+    btn.disabled = false;
+    return;
+  }
+  const res = await fetch(`${endpoint}?instanceId=${encodeURIComponent(instanceId)}`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ instanceId })
-  }).catch(() => {});
+  }).catch(() => null);
+  if (res && !res.ok) {
+    const data = await res.json().catch(() => ({}));
+    if (data.error) alert(data.error);
+  }
   
   setTimeout(() => {
     btn.innerHTML = oldText;
@@ -57,7 +88,12 @@ async function doAction(ev, instanceId, endpoint) {
 }
 
 async function openWorldPanel(instanceId) {
-  await selectInstance(instanceId);
+  if (isAnotherInstanceRunning(instanceId)) {
+    showRunningConflictAlert();
+    return;
+  }
+  const ok = await selectInstance(instanceId);
+  if (!ok) return;
   window.location.href = 'index.html';
 }
 
@@ -83,10 +119,17 @@ function getStatusInfo(status) {
 function renderInstanceCard(instance, activeId) {
   const card = document.createElement('div');
   const sInfo = getStatusInfo(instance.status);
-  const isOnline = instance.status === 'online';
+  const isOnline = instance.status === 'online' || instance.status === 'starting';
+  const blockedByOther = isAnotherInstanceRunning(instance.id);
   
-  card.className = `instance-card ${sInfo.class} ${instance.id === activeId ? 'active' : ''}`;
-  card.onclick = () => openWorldPanel(instance.id);
+  card.className = `instance-card ${sInfo.class} ${instance.id === activeId ? 'active' : ''} ${blockedByOther ? 'instance-blocked' : ''}`;
+  card.onclick = () => {
+    if (blockedByOther) {
+      showRunningConflictAlert();
+      return;
+    }
+    openWorldPanel(instance.id);
+  };
   card.dataset.id = instance.id;
 
   const maxPlayers = instance.maxPlayers || 20;
@@ -145,7 +188,7 @@ function renderInstanceCard(instance, activeId) {
         <i class="fa-solid fa-gauge-high"></i> Abrir Panel
       </button>
       ${instance.status === 'offline' 
-        ? `<button class="action-btn success" title="Iniciar" onclick="doAction(event, '${instance.id}', '/api/server/start')"><i class="fa-solid fa-play"></i></button>`
+        ? `<button class="action-btn success" title="Iniciar" ${blockedByOther ? 'disabled' : ''} onclick="doAction(event, '${instance.id}', '/api/server/start')"><i class="fa-solid fa-play"></i></button>`
         : `<button class="action-btn danger" title="Detener" onclick="doAction(event, '${instance.id}', '/api/server/stop')"><i class="fa-solid fa-stop"></i></button>
            <button class="action-btn warning" title="Reiniciar" onclick="doAction(event, '${instance.id}', '/api/server/restart')"><i class="fa-solid fa-rotate-right"></i></button>`
       }
@@ -228,6 +271,7 @@ async function loadInstances() {
   }
 
   const instData = await instRes.json();
+  runningInstanceId = instData.runningInstanceId || null;
   const instances = instData.instances || [];
   cachedInstances = instances.slice();
   const activeId = localStorage.getItem('activeInstanceId') || instData.activeInstanceId || null;

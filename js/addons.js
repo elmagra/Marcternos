@@ -1,4 +1,4 @@
-﻿const addons = [
+const addons = [
     {
         id: 'lithium',
         name: 'Lithium',
@@ -243,7 +243,7 @@ function displayAddons(filterVal = 'all') {
 
         const canInstallByType = (typeToShow === 'plugin' && isPluginServer) || (typeToShow === 'mod' && isModServer);
         
-        // --- DETECCIÃ“N MEJORADA ---
+        // --- DETECCIÓN MEJORADA ---
         const targetList = typeToShow === 'plugin' ? installedAddons.plugins : installedAddons.mods;
         const normalize = (s) => s.toLowerCase().replace(/[^a-z0-9]/g, '');
         const isInstalled = targetList.some(filename => {
@@ -393,7 +393,7 @@ async function removeAddon(addon, type) {
     const btn = document.getElementById(`del-${addon.id}`);
     const originalContent = btn.innerHTML;
     
-    if (!confirm(`Â¿Estás seguro de que quieres eliminar ${addon.name}?`)) return;
+    if (!confirm(`¿Estás seguro de que quieres eliminar ${addon.name}?`)) return;
     
     btn.disabled = true;
     btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Borrando...';

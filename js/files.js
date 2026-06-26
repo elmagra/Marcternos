@@ -1,5 +1,35 @@
 const $ = (id) => document.getElementById(id);
 
+const PROTECTED_ROOT_ENTRIES = new Set([
+    'server.jar', 'eula.txt', 'server.properties', 'server-icon.png',
+    'ops.json', 'whitelist.json', 'banned-players.json', 'banned-ips.json', 'usercache.json',
+    'bukkit.yml', 'spigot.yml', 'paper.yml', 'paper-global.yml', 'paper-world-defaults.yml',
+    'commands.yml', 'help.yml', 'permissions.yml',
+    'logs', 'libraries', 'versions', 'cache', 'crash-reports',
+    'world', 'world_nether', 'world_the_end', '.creating',
+]);
+
+const PROTECTED_ROOT_FOLDERS = [
+    'logs', 'libraries', 'versions', 'cache', 'crash-reports',
+    'world', 'world_nether', 'world_the_end',
+];
+
+function isFileProtected(fileName, currentPath, isFolder) {
+    const normalized = currentPath === '' ? '/' : currentPath;
+    const segments = normalized.split('/').filter(Boolean);
+    const topDir = segments[0]?.toLowerCase();
+
+    if (topDir === 'mods' || topDir === 'plugins' || topDir === 'config') return false;
+
+    if (normalized === '/') {
+        return PROTECTED_ROOT_ENTRIES.has(fileName.toLowerCase());
+    }
+
+    if (segments.length >= 1 && PROTECTED_ROOT_FOLDERS.includes(topDir)) return true;
+
+    return false;
+}
+
 document.addEventListener('DOMContentLoaded', () => {
     const fileListBody = $('fileListBody');
     const breadcrumbContainer = $('breadcrumbContainer');
@@ -99,9 +129,7 @@ document.addEventListener('DOMContentLoaded', () => {
             };
 
             const fullPath = currentPath === '/' ? '/' + file.name : currentPath + '/' + file.name;
-            const isInsideAllowedDir = currentPath.startsWith('/mods') || currentPath.startsWith('/plugins') || currentPath.startsWith('/config');
-            const isAllowedRootFolder = (['mods', 'plugins', 'config'].includes(file.name.toLowerCase())) && isFolder;
-            const isProtected = !isInsideAllowedDir && !isAllowedRootFolder;
+            const isProtected = isFileProtected(file.name, currentPath, isFolder);
 
             tr.innerHTML = `
                 <td style="padding-left: 20px;">

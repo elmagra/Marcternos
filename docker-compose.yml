@@ -1,28 +1,36 @@
-﻿version: '3.8'
-
-services:
+﻿services:
   panel-minecraft:
     build: .
-    container_name: panel-minecraft
+    container_name: marcternos-panel
     stdin_open: true
     tty: true
     ports:
-      - "3000:3000"         # Frontend & API
-      - "25565:25565"       # Minecraft port (can be changed in server.properties)
-      - "25565:25565/udp"   # Optional Bedrock/Geyser UDP forwarding
+      - "${PORT:-3000}:3000"
+      - "${MC_PUBLIC_PORT:-25565}:25565"
+      - "${MC_PUBLIC_PORT:-25565}:25565/udp"
     volumes:
-      - ./data/servers:/app/data/servers
+      - ./data:/app/data
+    env_file:
+      - .env
     environment:
-      - PORT=3000
-      - MULTI_INSTANCE_ENABLED=true
-      - DYNAMIC_CATALOG_ENABLED=true
-      - SERVERS_ROOT=/app/data/servers
-      - PANEL_ROOT=/app/
-      - JAVA_PATH=java
-      - JAVA_ARGS=-XX:MaxRAMPercentage=90.0 -XX:+UseG1GC
-      - PUBLIC_PORT=25565
-      - MC_PUBLIC_PORT=25565
-      # - PUBLIC_HOST=100.x.y.z  # opcional: fija aqui tu IP Tailscale externa
+      PORT: ${PORT:-3000}
+      MULTI_INSTANCE_ENABLED: ${MULTI_INSTANCE_ENABLED:-true}
+      DYNAMIC_CATALOG_ENABLED: ${DYNAMIC_CATALOG_ENABLED:-true}
+      SERVERS_ROOT: /app/data/servers
+      INSTANCE_REGISTRY_PATH: /app/data/instances/registry.json
+      PANEL_ROOT: /app/
+      JAVA_PATH: java
+      JAVA_ARGS: ${JAVA_ARGS:--XX:MaxRAMPercentage=90.0 -XX:+UseG1GC}
+      PUBLIC_HOST: ${PUBLIC_HOST:-}
+      PUBLIC_PORT: ${MC_PUBLIC_PORT:-25565}
+      MC_PUBLIC_PORT: ${MC_PUBLIC_PORT:-25565}
+      TAILSCALE_IP: ${TAILSCALE_IP:-}
+    healthcheck:
+      test: ["CMD", "curl", "-fsS", "http://127.0.0.1:3000/api/server/status"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 20s
     deploy:
       resources:
         limits:

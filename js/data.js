@@ -1,4 +1,4 @@
-﻿var serverData = {
+var serverData = {
   name: "Minecraft Server Demo",
   status: "online",
   uptimeSeconds: 12240,

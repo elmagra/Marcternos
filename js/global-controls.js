@@ -1,4 +1,4 @@
-﻿function $g(id) { return document.getElementById(id); }
+function $g(id) { return document.getElementById(id); }
 
 function getActiveInstanceId() {
     return localStorage.getItem('activeInstanceId') || '';
@@ -30,11 +30,12 @@ async function ensureActiveInstanceSelected() {
     try {
         const localId = getActiveInstanceId();
         if (localId) {
-            await fetch('/api/instances/select', {
+            const res = await fetch('/api/instances/select', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ instanceId: localId })
             });
+            if (res.status === 409) return;
             return;
         }
         const res = await fetch('/api/instances');

@@ -50,7 +50,7 @@
     }
 
     .version-image {
-      width: 110%; /* Un poco mÃ¡s grande para ocultar bordes si los hay */
+      width: 110%; /* Un poco más grande para ocultar bordes si los hay */
       height: 110%;
       object-fit: cover;
     }
@@ -83,7 +83,7 @@
     }
     .btn-create:hover { transform: translateY(-2px); box-shadow: 0 8px 25px rgba(37, 99, 235, 0.4); }
 
-    /* Estilos para los Toggles Modernos y Tarjetas de OpciÃ³n */
+    /* Estilos para los Toggles Modernos y Tarjetas de Opción */
     .option-card-toggle {
       background: #0f172a;
       border: 1px solid #1e293b;
@@ -204,11 +204,11 @@
       </header>
 
       <div class="create-world-container">
-        <!-- 1. SelecciÃ³n de Software/Tipo -->
+        <!-- 1. Selección de Software/Tipo -->
         <section class="settings-card" style="margin-bottom: 20px;">
           <div class="settings-card-header">
-            <span class="settings-card-icon">âš™ï¸</span>
-            <h3>Tipo de Servidor / VersiÃ³n</h3>
+            <span class="settings-card-icon">⚙️</span>
+            <h3>Tipo de Servidor / Versión</h3>
           </div>
           <div class="settings-fields" style="padding: 24px;">
             <div class="version-select-grid">
@@ -228,7 +228,7 @@
                   <img src="resources/img/versions/paper.png" class="version-image" alt="Paper">
                 </div>
                 <span class="version-name">Paper / Spigot</span>
-                <span class="version-desc">Plugins y optimizaciÃ³n</span>
+                <span class="version-desc">Plugins y optimización</span>
               </div>
 
               <!-- FORGE -->
@@ -237,7 +237,7 @@
                   <img src="resources/img/versions/forge.png" class="version-image" alt="Forge">
                 </div>
                 <span class="version-name">Forge</span>
-                <span class="version-desc">Mods clÃ¡sicos pesados</span>
+                <span class="version-desc">Mods clásicos pesados</span>
               </div>
 
               <!-- FABRIC -->
@@ -253,11 +253,11 @@
 
             <div class="field-row">
               <div class="field-label-row">
-                <label for="mc-version">VersiÃ³n de Minecraft</label>
+                <label for="mc-version">Versión de Minecraft</label>
               </div>
               <select id="mc-version">
                 <optgroup label="Minecraft 1.21.x">
-                  <option value="1.21.10">1.21.10 (Ãšltima)</option>
+                  <option value="1.21.10">1.21.10 (Última)</option>
                   <option value="1.21.9">1.21.9</option>
                   <option value="1.21.8">1.21.8</option>
                   <option value="1.21.7">1.21.7</option>
@@ -294,13 +294,13 @@
                   <option value="1.17.1">1.17.1</option>
                   <option value="1.17">1.17</option>
                 </optgroup>
-                <optgroup label="Versiones ClÃ¡sicas">
+                <optgroup label="Versiones Clásicas">
                   <option value="1.16.5">1.16.5 (Legacy Estable)</option>
                   <option value="1.15.2">1.15.2</option>
                   <option value="1.14.4">1.14.4</option>
                   <option value="1.13.2">1.13.2</option>
                   <option value="1.12.2">1.12.2 (Ultra Mods)</option>
-                  <option value="1.8.9">1.8.9 (PvP ClÃ¡sico)</option>
+                  <option value="1.8.9">1.8.9 (PvP Clásico)</option>
                 </optgroup>
               </select>
             </div>
@@ -310,7 +310,7 @@
         <!-- 2. Propiedades trasladadas -->
         <section class="settings-card">
           <div class="settings-card-header">
-            <span class="settings-card-icon">ðŸ—ºï¸</span>
+            <span class="settings-card-icon">🗺️</span>
             <h3>Ajustes del Mundo</h3>
           </div>
           <div class="settings-fields">
@@ -323,9 +323,9 @@
 
             <div class="field-row">
               <div class="field-label-row">
-                <label for="level-seed">Semilla (Seed) &mdash; <small style="color:#64748b">vacÃ­o = aleatoria</small></label>
+                <label for="level-seed">Semilla (Seed) &mdash; <small style="color:#64748b">vacío = aleatoria</small></label>
               </div>
-              <input type="text" id="level-seed" placeholder="Dejar vacÃ­o para semilla aleatoria" />
+              <input type="text" id="level-seed" placeholder="Dejar vacío para semilla aleatoria" />
             </div>
 
             <div class="field-row">
@@ -333,8 +333,8 @@
                 <label for="level-type">Tipo de nivel</label>
               </div>
               <select id="level-type">
-                <option value="default" selected>default â€” Normal</option>
-                <option value="flat">flat â€” Mundo plano</option>
+                <option value="default" selected>default — Normal</option>
+                <option value="flat">flat — Mundo plano</option>
               </select>
             </div>
 
@@ -360,7 +360,7 @@
                   <i class="fa-solid fa-gift"></i>
                 </div>
                 <div class="option-card-text">
-                  <span class="option-card-title">Cofre de bonificaciÃ³n</span>
+                  <span class="option-card-title">Cofre de bonificación</span>
                   <span class="option-card-subtitle">Regalos de inicio cerca del spawn</span>
                 </div>
               </div>
@@ -372,7 +372,7 @@
 
             <div class="field-row">
               <div class="field-label-row">
-                <label for="max-world-size">TamaÃ±o mÃ¡ximo</label>
+                <label for="max-world-size">Tamaño máximo</label>
               </div>
               <input type="number" id="max-world-size" placeholder="29999984" />
             </div>
@@ -382,7 +382,7 @@
         <!-- Zona de logs integrada siempre visible -->
         <div id="inlineLogContainer" style="display: block; margin-top: 24px;">
           <div class="inline-log-header">
-            <span>ðŸš€ Progreso de InstalaciÃ³n</span>
+            <span>🚀 Progreso de Instalación</span>
             <span id="inlinePercentage">0%</span>
           </div>
           <div class="progress-bar" style="margin-bottom: 12px; height: 8px;">
@@ -393,13 +393,13 @@
           <!-- Banner de aviso sobre mods/plugins -->
           <div class="info-banner" style="margin-top: 15px; padding: 12px; background: rgba(59, 130, 246, 0.1); border: 1px dashed #3b82f6; border-radius: 12px; font-size: 13px; color: #94a3b8; display: flex; align-items: center; gap: 12px;">
             <i class="fa-solid fa-circle-info" style="color: #3b82f6; font-size: 1.2rem;"></i>
-            <span>Para mods que afecten a la generaciÃ³n del mundo (como Terralith), sÃºbelos a la carpeta <b>/mods</b> desde la pestaÃ±a 'Archivos' despuÃ©s de crear el mundo pero <b>antes</b> de iniciarlo por primera vez.</span>
+            <span>Para mods que afecten a la generación del mundo (como Terralith), súbelos a la carpeta <b>/mods</b> desde la pestaña 'Archivos' después de crear el mundo pero <b>antes</b> de iniciarlo por primera vez.</span>
           </div>
         </div>
 
 
         <div class="action-row">
-          <button class="btn-create" id="btnCreateWorld">âœ¨ Crear y Generar Mundo</button>
+          <button class="btn-create" id="btnCreateWorld">✨ Crear y Generar Mundo</button>
         </div>
       </div>
     </main>
