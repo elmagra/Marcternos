@@ -264,7 +264,7 @@ async function getServerPathFromRequest(req) {
 }
 
 function isServerRunning() {
-    return !!(mcProcess && (serverState.status === 'online' || serverState.status === 'starting'));
+    return !!mcProcess;
 }
 
 async function resolveInstanceIdForPath(serverPath) {
@@ -288,10 +288,11 @@ function getRunningInstanceConflictError() {
 }
 
 async function assertCanUseInstance(req, instanceId) {
-    if (!isServerRunning() || !runningInstanceId) return true;
+    if (!mcProcess) return true;
     const targetId = instanceId || getRequestedInstanceId(req);
-    if (targetId && targetId !== runningInstanceId) return false;
-    return true;
+    if (!targetId) return true;
+    if (!runningInstanceId) return false;
+    return targetId === runningInstanceId;
 }
 
 function addCreationStep(msg) {
@@ -923,7 +924,9 @@ function stopProcessSync() {
                     mcProcess.kill('SIGKILL');
                 }
                 mcProcess = null;
+                runningInstanceId = null;
                 serverState.status = 'offline';
+                serverState.startTime = null;
                 resolve();
             }
         }, 8000);
@@ -987,7 +990,7 @@ app.get('/api/instances', async (req, res) => {
                     iconRev = st.mtimeMs || 0;
                 }
             } catch (e) {}
-            const isRunning = runningInstanceId === i.id;
+            const isRunning = !!(mcProcess && runningInstanceId === i.id);
             const software = isRunning
                 ? (serverState.software || i.software || 'Vanilla')
                 : (i.software || 'Vanilla');
@@ -1142,6 +1145,11 @@ app.post('/api/catalog/refresh', async (req, res) => {
 app.get('/api/server/status', async (req, res) => {
     const serverPath = await getServerPathFromRequest(req);
     if (serverPath) await ensureInstanceCaches(serverPath);
+    if (!mcProcess) {
+        serverState.status = 'offline';
+        runningInstanceId = null;
+        if (serverState.startTime) serverState.startTime = null;
+    }
     const data = { ...serverState };
     data.uptimeMs = serverState.startTime ? (Date.now() - serverState.startTime) : 0;
     const active = await getActiveInstance().catch(() => null);
