@@ -4,6 +4,7 @@
     container_name: marcternos-panel
     stdin_open: true
     tty: true
+    # En NAS con Tailscale usa: docker compose -f docker-compose.yml -f docker-compose.nas.yml up -d
     ports:
       - "${PORT:-3000}:3000"
       - "${MC_PUBLIC_PORT:-25565}:25565"

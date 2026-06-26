@@ -1,0 +1,8 @@
+# Uso en NAS/Linux con Tailscale (recomendado):
+#   docker compose -f docker-compose.yml -f docker-compose.nas.yml up -d --build
+#
+# El contenedor usa la red del host y ve la IP Tailscale (100.x) en lugar de 172.17.x
+
+services:
+  panel-minecraft:
+    network_mode: host

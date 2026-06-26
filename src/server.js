@@ -65,6 +65,7 @@ app.use((req, res, next) => {
     };
     next();
 });
+app.get('/', (req, res) => res.redirect(302, '/instances.html'));
 app.use(express.static(config.PANEL_ROOT));
 // Nota: no persistimos activeInstanceId en cada request con instanceId.
 // Hacerlo aquí provoca escrituras concurrentes del registry (incluyendo /api/server/icon)
@@ -941,20 +942,89 @@ function stopProcessSync() {
     });
 }
 
+let resolvedTailscaleIp = null;
+
+function isPrivateOrDockerIp(ip) {
+    if (!ip || typeof ip !== 'string') return true;
+    if (ip.startsWith('127.')) return true;
+    if (ip.startsWith('10.')) return true;
+    if (ip.startsWith('192.168.')) return true;
+    if (ip.startsWith('169.254.')) return true;
+    const match = ip.match(/^172\.(\d+)\./);
+    if (match) {
+        const second = parseInt(match[1], 10);
+        if (second >= 16 && second <= 31) return true;
+    }
+    return false;
+}
+
+function isTailscaleIp(ip) {
+    return typeof ip === 'string' && ip.startsWith('100.');
+}
+
+function refreshTailscaleIpFromCli() {
+    return new Promise((resolve) => {
+        exec('tailscale ip -4', { timeout: 5000 }, (err, stdout) => {
+            if (err) return resolve(null);
+            const line = String(stdout || '').trim().split(/\s+/)[0];
+            if (line && isTailscaleIp(line)) {
+                resolvedTailscaleIp = line;
+                return resolve(line);
+            }
+            resolve(null);
+        });
+    });
+}
+
+refreshTailscaleIpFromCli().catch(() => {});
+setInterval(() => { refreshTailscaleIpFromCli().catch(() => {}); }, 5 * 60 * 1000);
+
 function detectBestLocalIp() {
     const nets = os.networkInterfaces();
-    let normalIp = '127.0.0.1';
     let tailscaleIp = '';
+    let publicCandidate = '';
+    let privateFallback = '127.0.0.1';
 
     for (const name of Object.keys(nets)) {
         for (const net of nets[name] || []) {
-            if (net.family !== 'IPv4' || net.internal) continue;
-            if (!normalIp || normalIp === '127.0.0.1') normalIp = net.address;
-            if (net.address.startsWith('100.') && !tailscaleIp) tailscaleIp = net.address;
-            if (name.toLowerCase().includes('tailscale') && !tailscaleIp) tailscaleIp = net.address;
+            if (net.family !== 'IPv4' && net.family !== 4) continue;
+            if (net.internal) continue;
+            const addr = net.address;
+            if (isTailscaleIp(addr)) {
+                if (!tailscaleIp) tailscaleIp = addr;
+                continue;
+            }
+            if (name.toLowerCase().includes('tailscale') && !tailscaleIp) {
+                tailscaleIp = addr;
+                continue;
+            }
+            if (!isPrivateOrDockerIp(addr)) {
+                if (!publicCandidate) publicCandidate = addr;
+            } else if (!privateFallback || privateFallback === '127.0.0.1') {
+                privateFallback = addr;
+            }
         }
     }
-    return { ip: tailscaleIp || normalIp || '127.0.0.1', tailscaleIp, normalIp: normalIp || '127.0.0.1' };
+
+    const ip = tailscaleIp || publicCandidate || privateFallback || '127.0.0.1';
+    return {
+        ip,
+        tailscaleIp,
+        normalIp: publicCandidate || privateFallback || '127.0.0.1'
+    };
+}
+
+function detectPublicHost(req) {
+    if (config.PUBLIC_HOST) return String(config.PUBLIC_HOST).trim();
+    if (config.TAILSCALE_IP) return String(config.TAILSCALE_IP).trim();
+    if (resolvedTailscaleIp) return resolvedTailscaleIp;
+    if (req && req.headers && req.headers['x-public-host']) {
+        return String(req.headers['x-public-host']).trim();
+    }
+    const local = detectBestLocalIp();
+    if (local.tailscaleIp) return local.tailscaleIp;
+    if (!isPrivateOrDockerIp(local.ip)) return local.ip;
+    return resolvedTailscaleIp || '127.0.0.1';
 }
 
 function detectPublicPort(req) {
@@ -964,15 +1034,7 @@ function detectPublicPort(req) {
     if (req.headers['x-forwarded-port']) return String(req.headers['x-forwarded-port']);
     const host = String(req.headers.host || '');
     const hostPort = host.includes(':') ? host.split(':').pop() : '';
-    return hostPort || String(config.PORT);
-}
-
-function detectPublicHost(req) {
-    if (config.PUBLIC_HOST) return String(config.PUBLIC_HOST);
-    if (!config.PUBLIC_HOST && config.TAILSCALE_IP) return String(config.TAILSCALE_IP);
-    if (req.headers['x-public-host']) return String(req.headers['x-public-host']);
-    const local = detectBestLocalIp();
-    return local.tailscaleIp || local.ip;
+    return hostPort || String(config.MC_PUBLIC_PORT || config.PORT);
 }
 
 app.get('/api/instances', async (req, res) => {
